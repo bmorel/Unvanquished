@@ -332,6 +332,12 @@ int BotGetDesiredBuy( gentity_t *self, weapon_t *weapon, upgrade_t *upgrades, in
 	int usableCapital = credits + equipmentPrice;
 	int numUpgrades = 0;
 
+	unsigned int numTeamUpgrades[UP_NUM_UPGRADES];
+	unsigned int numTeamWeapons[WP_NUM_WEAPONS];
+	memset( numTeamUpgrades, 0, sizeof( numTeamUpgrades ) );
+	memset( numTeamWeapons , 0, sizeof( numTeamWeapons  ) );
+
+	TeamEquipment( self, numTeamUpgrades, UP_NUM_UPGRADES, numTeamWeapons, WP_NUM_WEAPONS );
 	for (i = 0; i < maxUpgrades; ++i )
 	{
 		upgrades[i] = UP_NONE;
@@ -352,7 +358,10 @@ int BotGetDesiredBuy( gentity_t *self, weapon_t *weapon, upgrade_t *upgrades, in
 	usableCapital -= BG_Upgrade( upgrades[numUpgrades] )->price;
 	numUpgrades += upgrades[numUpgrades] == UP_NONE ? 0 : 1;
 
-	if ( BG_UpgradeUnlocked( UP_RADAR )
+	const team_t team = static_cast<team_t>( self->client->pers.team );
+	unsigned int alliesNumbers[MAX_CLIENTS];
+	bool teamNeedsRadar = FindAllies( alliesNumbers, MAX_CLIENTS, team ) * 100 * 3 / 4 < 75;
+	if ( teamNeedsRadar && BG_UpgradeUnlocked( UP_RADAR )
 			&& ( BG_Upgrade( upgrades[0] )->slots & BG_Upgrade( UP_RADAR )->slots ) == 0
 			&& usableCapital >= BG_Upgrade( UP_RADAR )->price )
 	{
@@ -1395,12 +1404,13 @@ int FindBots( int *botEntityNumbers, int maxBots, team_t team )
 	int numBots = 0;
 	int i;
 	memset( botEntityNumbers, 0, sizeof( int )*maxBots );
-	for ( i = 0; i < MAX_CLIENTS; i++ )
+	for ( i = 0; i < MAX_CLIENTS && numBots < maxBots; i++ )
 	{
 		testEntity = &g_entities[i];
+		// testEntity->r.svFlags => "SVF_NOCLIENT, SVF_BROADCAST, etc..." good thing grep exists!
 		if ( testEntity->r.svFlags & SVF_BOT )
 		{
-			if ( testEntity->client->pers.team == team && numBots < maxBots )
+			if ( testEntity->client->pers.team == team )
 			{
 				botEntityNumbers[numBots++] = i;
 			}

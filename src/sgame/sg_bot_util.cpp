@@ -27,6 +27,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "sg_bot_util.h"
 #include "Entities.h"
 
+void TeamEquipment( gentity_t *self, unsigned int* numUpgrades, size_t maxUpgrades, unsigned int* numWeapons, size_t maxWeapons );
+unsigned int FindAllies( unsigned int *allyEntityNumbers, unsigned int maxAllies, team_t team );
+
 /*
 =======================
 Scoring functions for logic
@@ -1355,6 +1358,31 @@ float BotAimAngle( gentity_t *self, vec3_t pos )
 	return AngleBetweenVectors( forward, ideal );
 }
 
+// fills allyEntityNumbers with players of a team, and return the number of entities found.
+// pre-condition:
+// * team is playable
+// * allyEntityNumbers is an array of at least maxAllies unsigned integers
+// * allyEntityNumbers memory is initialized
+// * there are less than MAX_CLIENTS players in team
+// * there is enough space to store all team's player's references into allyEntityNumbers
+unsigned int FindAllies( unsigned int *allyEntityNumbers, unsigned int maxAllies, team_t team )
+{
+	ASSERT( G_IsPlayableTeam( team ) );
+	gentity_t *testEntity;
+	unsigned int numAllies = 0;
+	for ( unsigned int i = 0; i < MAX_CLIENTS && numAllies < maxAllies; i++ )
+	{
+		testEntity = &g_entities[i];
+		// this is pure guessing and luck...
+		if ( testEntity->client && testEntity->client->pers.team == team )
+		{
+			allyEntityNumbers[numAllies] = i;
+			numAllies++;
+		}
+	}
+	return numAllies;
+}
+
 /*
 ========================
 Bot Team Querys
@@ -1441,6 +1469,50 @@ bool PlayersBehindBotInSpawnQueue( gentity_t *self )
 	else
 	{
 		return false;
+	}
+}
+
+// Initializes numUpgrades and numWeapons arrays with team's current equipment
+// pre-condition:
+// * self points to a player which is inside a playable team
+// * numUpgrades is an array of at least maxUpgrades unsigned integers
+// * numUpgrades memory is initialized
+// * numWeapons is an array of at least maxWeapons unsigned integers
+// * numWeapons memory is initialized
+// * self's team have less than MAX_CLIENTS players
+void TeamEquipment( gentity_t *self, unsigned int* numUpgrades, size_t maxUpgrades, unsigned int* numWeapons, size_t maxWeapons )
+{
+	ASSERT( self );
+	ASSERT( numUpgrades );
+	ASSERT( numWeapons );
+	const team_t team = static_cast<team_t>( self->client->pers.team );
+	unsigned int alliesNumbers[MAX_CLIENTS];
+	memset( alliesNumbers, 0, sizeof( alliesNumbers ) );
+	unsigned int numAllies = FindAllies( alliesNumbers, MAX_CLIENTS, team );
+
+	for ( unsigned int i = 0; i < numAllies; ++i )
+	{
+		gentity_t *ally = &g_entities[alliesNumbers[i]];
+		if ( ally == self )
+		{
+			continue;
+		}
+		++numWeapons[ally->client->ps.stats[STAT_WEAPON]];
+		if ( team == TEAM_HUMANS )
+		{
+			// for all possible upgrades, check if current player already have it.
+			// this is very fragile, at best, since it will break if TEAM_ALIENS becomes
+			// able to have upgrades. Class is not considered, neither.
+			// last but not least, it's playing with bits.
+			int * stat = &ally->client->ps.stats[STAT_ITEMS];
+			for ( int up = UP_NONE + 1; up < UP_NUM_UPGRADES; ++up )
+			{
+				if ( *stat & ( 1 << up ) )
+				{
+					++numUpgrades[up];
+				}
+			}
+		}
 	}
 }
 

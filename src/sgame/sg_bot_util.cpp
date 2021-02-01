@@ -98,13 +98,17 @@ float BotGetHealScore( gentity_t *self )
 		{
 			distToHealer = self->botMind->closestBuildings[ BA_A_BOOSTER ].distance;
 		}
-		else if ( self->botMind->closestBuildings[ BA_A_OVERMIND ].ent )
+		else
 		{
-			distToHealer = self->botMind->closestBuildings[ BA_A_OVERMIND ].distance;
-		}
-		else if ( self->botMind->closestBuildings[ BA_A_SPAWN ].ent )
-		{
-			distToHealer = self->botMind->closestBuildings[BA_A_SPAWN].distance;
+			distToHealer = std::numeric_limits<float>::max();
+			for ( int target = BA_A_START; target != BA_A_END; ++target )
+			{
+				if ( target == BA_A_BOOSTER )
+				{
+					continue;
+				}
+				distToHealer = std::min( distToHealer, self->botMind->closestBuildings[ BA_A_OVERMIND ].distance );
+			}
 		}
 	}
 	else

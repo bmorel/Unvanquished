@@ -581,6 +581,7 @@ enum buildable_t
   BA_NONE,
 
   BA_A_SPAWN,
+  BA_A_START = BA_A_SPAWN,
   BA_A_OVERMIND,
 
   BA_A_BARRICADE,
@@ -592,6 +593,8 @@ enum buildable_t
   BA_A_SPIKER,
 
   BA_H_SPAWN,
+  BA_A_END = BA_H_SPAWN,
+  BA_H_START = BA_H_SPAWN,
 
   BA_H_MGTURRET,
   BA_H_ROCKETPOD,
@@ -601,6 +604,7 @@ enum buildable_t
   BA_H_DRILL,
 
   BA_H_REACTOR,
+  BA_H_END = BA_H_REACTOR,
 
   BA_NUM_BUILDABLES
 };

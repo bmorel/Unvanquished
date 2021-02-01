@@ -107,7 +107,10 @@ float BotGetHealScore( gentity_t *self )
 				{
 					continue;
 				}
-				distToHealer = std::min( distToHealer, self->botMind->closestBuildings[ target ].distance );
+				if ( self->botMind->closestBuildings[ target ].ent )
+				{
+					distToHealer = std::min( distToHealer, self->botMind->closestBuildings[ target ].distance );
+				}
 			}
 		}
 	}

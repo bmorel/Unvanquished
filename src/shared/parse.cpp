@@ -424,11 +424,10 @@ Parse_SetScriptPunctuations
 */
 static void Parse_SetScriptPunctuations( script_t *script, punctuation_t *p )
 {
-	if ( p ) { Parse_CreatePunctuationTable( script, p ); }
-	else { Parse_CreatePunctuationTable( script, Default_Punctuations ); }
+	if ( !p ) { p = Default_Punctuations; }
 
-	if ( p ) { script->punctuations = p; }
-	else { script->punctuations = Default_Punctuations; }
+	Parse_CreatePunctuationTable( script, p );
+	script->punctuations = p;
 }
 
 /*
@@ -3897,19 +3896,17 @@ static bool Parse_ReadToken( source_t *source, token_t *token )
 	{
 		if ( !Parse_ReadSourceToken( source, token ) ) { return false; }
 
-		//check for precompiler directives
-		if ( token->type == tokenType_t::TT_PUNCTUATION && *token->string == '#' )
+		if ( token->type == tokenType_t::TT_PUNCTUATION )
 		{
+			//check for precompiler directives
+			if ( *token->string == '#' )
 			{
 				//read the precompiler directive
 				if ( !Parse_ReadDirective( source ) ) { return false; }
 
 				continue;
 			}
-		}
-
-		if ( token->type == tokenType_t::TT_PUNCTUATION && *token->string == '$' )
-		{
+			if ( *token->string == '$' )
 			{
 				//read the precompiler directive
 				if ( !Parse_ReadDollarDirective( source ) ) { return false; }

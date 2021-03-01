@@ -28,6 +28,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "sg_bot_util.h"
 #include "Entities.h"
 
+AIGenericNode_t *ReadControlFlow_SeqSelCon( pc_token_list **tokenlist, AINodeRunner func );
 static bool expectToken( const char *s, pc_token_list **list, bool next )
 {
 	const pc_token_list *current = *list;
@@ -1012,7 +1013,7 @@ AIGenericNode_t *ReadActionNode( pc_token_list **tokenlist )
 	return ( AIGenericNode_t * ) ret;
 }
 
-AIGenericNode_t *ReadSequence( pc_token_list **tokenlist )
+AIGenericNode_t *ReadControlFlow_SeqSelCon( pc_token_list **tokenlist, AINodeRunner func )
 {
 	pc_token_list *current = *tokenlist;
 	AIGenericNode_t *node = nullptr;
@@ -1025,41 +1026,7 @@ AIGenericNode_t *ReadSequence( pc_token_list **tokenlist )
 	{
 		return nullptr;
 	}
-	BotInitNode( SELECTOR_NODE, BotSequenceNode, node );
-	return node;
-}
-
-AIGenericNode_t *ReadSelector( pc_token_list **tokenlist )
-{
-	pc_token_list *current = *tokenlist;
-	AIGenericNode_t *node = nullptr;
-	current = current->next;
-
-	node = ReadNodeList( &current );
-
-	*tokenlist = current;
-	if ( !node )
-	{
-		return nullptr;
-	}
-	BotInitNode( SELECTOR_NODE, BotSelectorNode, node );
-	return node;
-}
-
-AIGenericNode_t *ReadConcurrent( pc_token_list **tokenlist )
-{
-	pc_token_list *current = *tokenlist;
-	AIGenericNode_t *node = nullptr;
-	current = current->next;
-
-	node = ReadNodeList( &current );
-
-	*tokenlist = current;
-	if ( !node )
-	{
-		return nullptr;
-	}
-	BotInitNode( SELECTOR_NODE, BotConcurrentNode, node );
+	BotInitNode( SELECTOR_NODE, func, node );
 	return node;
 }
 
@@ -1180,15 +1147,15 @@ AIGenericNode_t *ReadNode( pc_token_list **tokenlist )
 
 	if ( !Q_stricmp( current->token.string, "selector" ) )
 	{
-		node = ReadSelector( &current );
+		node = ReadControlFlow_SeqSelCon( &current, BotSelectorNode );
 	}
 	else if ( !Q_stricmp( current->token.string, "sequence" ) )
 	{
-		node = ReadSequence( &current );
+		node = ReadControlFlow_SeqSelCon( &current, BotSequenceNode );
 	}
 	else if ( !Q_stricmp( current->token.string, "concurrent" ) )
 	{
-		node = ReadConcurrent( &current );
+		node = ReadControlFlow_SeqSelCon( &current, BotConcurrentNode );
 	}
 	else if ( !Q_stricmp( current->token.string, "action" ) )
 	{

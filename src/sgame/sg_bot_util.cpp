@@ -310,96 +310,70 @@ int BotValueOfUpgrades( gentity_t *self )
 	return worth;
 }
 
-void BotGetDesiredBuy( gentity_t *self, weapon_t *weapon, upgrade_t *upgrades, int *numUpgrades )
+int BotGetDesiredBuy( gentity_t *self, weapon_t *weapon, upgrade_t *upgrades, int maxUpgrades )
 {
+	ASSERT( maxUpgrades >= 2 ); // because human bots will want up to 2 upgrades...
 	int i;
 	int equipmentPrice = BotValueOfWeapons( self ) + BotValueOfUpgrades( self );
 	int credits = self->client->ps.persistant[PERS_CREDIT];
 	int usableCapital = credits + equipmentPrice;
+	int numUpgrades = 0;
 
-	//decide what upgrade(s) to buy
-	if ( BG_WeaponUnlocked( WP_PAIN_SAW ) && BG_UpgradeUnlocked( UP_BATTLESUIT ) &&
-	     usableCapital >= ( BG_Weapon( WP_PAIN_SAW )->price + BG_Upgrade( UP_BATTLESUIT )->price ) )
+	for (i = 0; i < maxUpgrades; ++i )
 	{
-		upgrades[0] = UP_BATTLESUIT;
-		*numUpgrades = 1;
-	}
-	else if ( BG_WeaponUnlocked( WP_SHOTGUN ) && BG_UpgradeUnlocked( UP_MEDIUMARMOUR ) && BG_UpgradeUnlocked( UP_RADAR ) &&
-	          usableCapital >= ( BG_Weapon( WP_SHOTGUN )->price + BG_Upgrade( UP_MEDIUMARMOUR )->price + BG_Upgrade( UP_RADAR )->price ) )
-	{
-		upgrades[0] = UP_MEDIUMARMOUR;
-		upgrades[1] = UP_RADAR;
-		*numUpgrades = 2;
-	}
-	else if ( BG_WeaponUnlocked( WP_SHOTGUN ) && BG_UpgradeUnlocked( UP_LIGHTARMOUR ) && BG_UpgradeUnlocked( UP_RADAR ) &&
-	          usableCapital >= ( BG_Weapon( WP_SHOTGUN )->price + BG_Upgrade( UP_LIGHTARMOUR )->price + BG_Upgrade( UP_RADAR )->price ) )
-	{
-		upgrades[0] = UP_LIGHTARMOUR;
-		upgrades[1] = UP_RADAR;
-		*numUpgrades = 2;
-	}
-	else if ( BG_WeaponUnlocked( WP_PAIN_SAW ) && BG_UpgradeUnlocked( UP_MEDIUMARMOUR ) &&
-	          usableCapital >= ( BG_Weapon( WP_PAIN_SAW )->price + BG_Upgrade( UP_MEDIUMARMOUR )->price ) )
-	{
-		upgrades[0] = UP_MEDIUMARMOUR;
-		*numUpgrades = 1;
-	}
-	else if ( BG_WeaponUnlocked( WP_PAIN_SAW ) && BG_UpgradeUnlocked( UP_LIGHTARMOUR ) &&
-	          usableCapital >= ( BG_Weapon( WP_PAIN_SAW )->price + BG_Upgrade( UP_LIGHTARMOUR )->price ) )
-	{
-		upgrades[0] = UP_LIGHTARMOUR;
-		*numUpgrades = 1;
-	}
-	else
-	{
-		*numUpgrades = 0;
+		upgrades[i] = UP_NONE;
 	}
 
-	for (i = 0; i < *numUpgrades; i++)
+	if ( BG_UpgradeUnlocked( UP_BATTLESUIT ) && usableCapital >= BG_Upgrade( UP_BATTLESUIT )->price )
 	{
-		usableCapital -= BG_Upgrade( upgrades[i] )->price;
+		upgrades[numUpgrades] = UP_BATTLESUIT;
 	}
+	else if ( BG_UpgradeUnlocked( UP_MEDIUMARMOUR ) && usableCapital >= BG_Upgrade( UP_MEDIUMARMOUR )->price )
+	{
+		upgrades[numUpgrades] = UP_MEDIUMARMOUR;
+	}
+	else if ( usableCapital >= BG_Upgrade( UP_LIGHTARMOUR )->price )
+	{
+		upgrades[numUpgrades] = UP_LIGHTARMOUR;
+	}
+	usableCapital -= BG_Upgrade( upgrades[numUpgrades] )->price;
+	numUpgrades += upgrades[numUpgrades] == UP_NONE ? 0 : 1;
 
-	//now decide what weapon to buy
-	if ( g_bot_lcannon.integer && BG_WeaponUnlocked( WP_LUCIFER_CANNON ) && usableCapital >= BG_Weapon( WP_LUCIFER_CANNON )->price )
+	if ( BG_UpgradeUnlocked( UP_RADAR )
+			&& ( BG_Upgrade( upgrades[0] )->slots & BG_Upgrade( UP_RADAR )->slots ) == 0
+			&& usableCapital >= BG_Upgrade( UP_RADAR )->price )
 	{
-		*weapon = WP_LUCIFER_CANNON;;
+		upgrades[numUpgrades] = UP_RADAR;
 	}
-	else if ( g_bot_chaingun.integer && BG_WeaponUnlocked( WP_CHAINGUN ) && usableCapital >= BG_Weapon( WP_CHAINGUN )->price && upgrades[0] == UP_BATTLESUIT )
+	usableCapital -= BG_Upgrade( upgrades[numUpgrades] )->price;
+	numUpgrades += upgrades[numUpgrades] == UP_NONE ? 0 : 1;
+
+	// manually sorted by preference, hopefully a future patch will have a much smarter way to select weapon
+	struct
 	{
-		*weapon = WP_CHAINGUN;
-	}
-	else if ( g_bot_flamer.integer && BG_WeaponUnlocked( WP_FLAMER ) && usableCapital >= BG_Weapon( WP_FLAMER )->price )
+		int authorized;
+		weapon_t weapon;
+	} weapons[] =
 	{
-		*weapon = WP_FLAMER;
-	}
-	else if ( g_bot_prifle.integer && BG_WeaponUnlocked( WP_PULSE_RIFLE ) && usableCapital >= BG_Weapon( WP_PULSE_RIFLE )->price )
+		{ g_bot_lcannon.integer , WP_LUCIFER_CANNON },
+		{ g_bot_flamer.integer  , WP_FLAMER },
+		// pulse rifle has lower priority to keep previous "correct" behavior
+		{ g_bot_prifle.integer  , WP_PULSE_RIFLE },
+		{ g_bot_chaingun.integer, WP_CHAINGUN },
+		{ g_bot_mdriver.integer , WP_MASS_DRIVER },
+		{ g_bot_lasgun.integer  , WP_LAS_GUN },
+		{ g_bot_shotgun.integer , WP_SHOTGUN },
+		{ g_bot_painsaw.integer , WP_PAIN_SAW },
+		{ g_bot_rifle.integer   , WP_MACHINEGUN },
+	};
+
+	for ( auto const &wp : weapons )
 	{
-		*weapon = WP_PULSE_RIFLE;
-	}
-	else if ( g_bot_chaingun.integer && BG_WeaponUnlocked( WP_CHAINGUN ) && usableCapital >= BG_Weapon( WP_CHAINGUN )->price )
-	{
-		*weapon = WP_CHAINGUN;;
-	}
-	else if ( g_bot_mdriver.integer && BG_WeaponUnlocked( WP_MASS_DRIVER ) && usableCapital >= BG_Weapon( WP_MASS_DRIVER )->price )
-	{
-		*weapon = WP_MASS_DRIVER;
-	}
-	else if ( g_bot_lasgun.integer && BG_WeaponUnlocked( WP_LAS_GUN ) && usableCapital >= BG_Weapon( WP_LAS_GUN )->price )
-	{
-		*weapon = WP_LAS_GUN;
-	}
-	else if ( g_bot_shotgun.integer && BG_WeaponUnlocked( WP_SHOTGUN ) && usableCapital >= BG_Weapon( WP_SHOTGUN )->price )
-	{
-		*weapon = WP_SHOTGUN;
-	}
-	else if ( g_bot_painsaw.integer && BG_WeaponUnlocked( WP_PAIN_SAW ) && usableCapital >= BG_Weapon( WP_PAIN_SAW )->price )
-	{
-		*weapon = WP_PAIN_SAW;
-	}
-	else
-	{
-		*weapon = WP_MACHINEGUN;
+		if ( wp.authorized && BG_WeaponUnlocked( wp.weapon ) && usableCapital >= BG_Weapon( wp.weapon )->price )
+		{
+			*weapon = wp.weapon;
+			break;
+		}
 	}
 
 	usableCapital -= BG_Weapon( *weapon )->price;
@@ -411,7 +385,7 @@ void BotGetDesiredBuy( gentity_t *self, weapon_t *weapon, upgrade_t *upgrades, i
 		int numContain = 0;
 		int i;
 
-		for ( i = 0; i < *numUpgrades; i++ )
+		for ( i = 0; i < numUpgrades; i++ )
 		{
 			if ( BG_InventoryContainsUpgrade( ( int )upgrades[i], self->client->ps.stats ) )
 			{
@@ -419,9 +393,9 @@ void BotGetDesiredBuy( gentity_t *self, weapon_t *weapon, upgrade_t *upgrades, i
 			}
 		}
 
-		if ( numContain == *numUpgrades )
+		if ( numContain == numUpgrades )
 		{
-			*numUpgrades = 0;
+			numUpgrades = 0;
 			for ( i = 0; i < 3; i++ )
 			{
 				upgrades[i] = UP_NONE;
@@ -429,6 +403,7 @@ void BotGetDesiredBuy( gentity_t *self, weapon_t *weapon, upgrade_t *upgrades, i
 			*weapon = WP_NONE;
 		}
 	}
+	return numUpgrades;
 }
 
 /*

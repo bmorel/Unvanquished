@@ -393,6 +393,10 @@ int BotGetDesiredBuy( gentity_t *self, weapon_t *weapon, upgrade_t *upgrades, in
 	{
 		if ( wp.authorized && BG_WeaponUnlocked( wp.weapon ) && usableCapital >= BG_Weapon( wp.weapon )->price )
 		{
+			if ( wp.weapon == WP_FLAMER && numTeamWeapons[WP_FLAMER] > numTeamWeapons[WP_PULSE_RIFLE] )
+			{
+				continue;
+			}
 			*weapon = wp.weapon;
 			break;
 		}

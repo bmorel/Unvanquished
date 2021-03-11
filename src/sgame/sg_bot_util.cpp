@@ -310,8 +310,18 @@ int BotValueOfUpgrades( gentity_t *self )
 	return worth;
 }
 
+// Allow human bots to decide what to buy
+// pre-condition:
+// * weapon is a valid pointer
+// * "upgrades" is an array of at least maxUpgrades elements
+// post-conditions:
+// * "upgrades" contains a list of upgrades to use
+// * "weapon" contains weapon to use
+// * Returns number of upgrades to buy (does not includes weapons)
 int BotGetDesiredBuy( gentity_t *self, weapon_t *weapon, upgrade_t *upgrades, int maxUpgrades )
 {
+	ASSERT( self && weapon && upgrades );
+	ASSERT( self->client->pers.team == TEAM_HUMANS ); // only humans can buy
 	ASSERT( maxUpgrades >= 2 ); // because human bots will want up to 2 upgrades...
 	int i;
 	int equipmentPrice = BotValueOfWeapons( self ) + BotValueOfUpgrades( self );

@@ -219,6 +219,7 @@ Cvar::Cvar<bool>   g_autoPause("g_autoPause", "pause empty server", Cvar::NONE, 
 // bot buy cvars
 vmCvar_t g_bot_buy;
 // human weapons
+vmCvar_t g_bot_ckit;
 vmCvar_t g_bot_rifle;
 vmCvar_t g_bot_painsaw;
 vmCvar_t g_bot_shotgun;
@@ -234,9 +235,14 @@ vmCvar_t g_bot_mediumarmour;
 vmCvar_t g_bot_lightarmour;
 // human upgrades
 vmCvar_t g_bot_radar;
+vmCvar_t g_bot_jetpack;
+vmCvar_t g_bot_grenade;
+vmCvar_t g_bot_firebomb;
 
 // bot evolution cvars
 vmCvar_t g_bot_evolve;
+vmCvar_t g_bot_level0;
+vmCvar_t g_bot_level0upg;
 vmCvar_t g_bot_level1;
 vmCvar_t g_bot_level2;
 vmCvar_t g_bot_level2upg;
@@ -418,6 +424,7 @@ static cvarTable_t gameCvarTable[] =
 
 	// bots: buying weapons
 	{ &g_bot_buy, "g_bot_buy", "1",  CVAR_NORESTART, 0, false, nullptr },
+	{ &g_bot_ckit, "g_bot_ckit", "1", CVAR_NORESTART, 0, false, nullptr },
 	{ &g_bot_rifle, "g_bot_rifle", "1",  CVAR_NORESTART, 0, false, nullptr },
 	{ &g_bot_painsaw, "g_bot_painsaw", "1",  CVAR_NORESTART, 0, false, nullptr },
 	{ &g_bot_shotgun, "g_bot_shotgun", "1",  CVAR_NORESTART, 0, false, nullptr },
@@ -433,9 +440,15 @@ static cvarTable_t gameCvarTable[] =
 	{ &g_bot_lightarmour, "g_bot_lightarmour", "1",  CVAR_NORESTART, 0, false, nullptr },
 	// bots: buying upgrades
 	{ &g_bot_radar, "g_bot_radar", "1",  CVAR_NORESTART, 0, false, nullptr },
+	{ &g_bot_jetpack, "g_bot_jetpack", "0",  CVAR_NORESTART, 0, false, nullptr },
+	{ &g_bot_grenade, "g_bot_grenade", "0",  CVAR_NORESTART, 0, false, nullptr },
+	{ &g_bot_firebomb, "g_bot_firebomb", "0",  CVAR_NORESTART, 0, false, nullptr },
+
 
 	// bots: evolution
 	{ &g_bot_evolve, "g_bot_evolve", "1", CVAR_NORESTART, 0, false, nullptr },
+	{ &g_bot_level0, "g_bot_level0", "0", CVAR_NORESTART, 0, false, nullptr },
+	{ &g_bot_level0upg, "g_bot_level0upg", "0", CVAR_NORESTART, 0, false, nullptr },
 	{ &g_bot_level1, "g_bot_level1", "1", CVAR_NORESTART, 0, false, nullptr },
 	{ &g_bot_level2, "g_bot_level2", "1", CVAR_NORESTART, 0, false, nullptr },
 	{ &g_bot_level2upg, "g_bot_level2upg", "1", CVAR_NORESTART, 0, false, nullptr },

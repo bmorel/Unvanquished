@@ -175,6 +175,7 @@ extern  Cvar::Cvar<float> g_devolveMaxBaseDistance;
 
 // bots: buying weapons cvars
 extern vmCvar_t g_bot_buy;
+extern vmCvar_t g_bot_ckit;
 extern vmCvar_t g_bot_rifle;
 extern vmCvar_t g_bot_painsaw;
 extern vmCvar_t g_bot_shotgun;
@@ -190,9 +191,14 @@ extern vmCvar_t g_bot_mediumarmour;
 extern vmCvar_t g_bot_lightarmour;
 // bots: buying other equipments cvars
 extern vmCvar_t g_bot_radar;
+extern vmCvar_t g_bot_jetpack;
+extern vmCvar_t g_bot_grenade;
+extern vmCvar_t g_bot_firebomb;
 
 // bot evolution cvars
 extern vmCvar_t g_bot_evolve;
+extern vmCvar_t g_bot_level0;
+extern vmCvar_t g_bot_level0upg;
 extern vmCvar_t g_bot_level1;
 extern vmCvar_t g_bot_level2;
 extern vmCvar_t g_bot_level2upg;

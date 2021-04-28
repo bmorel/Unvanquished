@@ -1035,65 +1035,37 @@ AINodeStatus_t BotActionGesture( gentity_t *self, AIGenericNode_t* )
 */
 AINodeStatus_t BotActionEvolve ( gentity_t *self, AIGenericNode_t* )
 {
-	AINodeStatus_t status = STATUS_FAILURE;
 	if ( !g_bot_evolve.integer )
 	{
-		return status;
+		return STATUS_FAILURE;
 	}
 
-	if ( BotCanEvolveToClass( self, PCL_ALIEN_LEVEL4 ) && g_bot_level4.integer )
+	// manually sorted by preference, hopefully a future patch will have a much smarter way
+	struct
 	{
-		if ( BotEvolveToClass( self, PCL_ALIEN_LEVEL4 ) )
-		{
-			status = STATUS_SUCCESS;
-		}
-	}
-	else if ( BotCanEvolveToClass( self, PCL_ALIEN_LEVEL3_UPG ) && g_bot_level3upg.integer )
+		int authorized;
+		int price;
+		class_t class_;
+	} classes[] =
 	{
-		if ( BotEvolveToClass( self, PCL_ALIEN_LEVEL3_UPG ) )
-		{
-			status = STATUS_SUCCESS;
-		}
-	}
-	else if ( BotCanEvolveToClass( self, PCL_ALIEN_LEVEL3 ) &&
-	          ( !BG_ClassUnlocked( PCL_ALIEN_LEVEL3_UPG ) ||!g_bot_level2upg.integer ||
-	            !g_bot_level3upg.integer ) && g_bot_level3.integer )
+		{ g_bot_level4   .integer, BG_Upgrade( PCL_ALIEN_LEVEL4     )->price, PCL_ALIEN_LEVEL4     },
+		{ g_bot_level3upg.integer, BG_Upgrade( PCL_ALIEN_LEVEL3_UPG )->price, PCL_ALIEN_LEVEL3_UPG },
+		{ g_bot_level3   .integer, BG_Upgrade( PCL_ALIEN_LEVEL3     )->price, PCL_ALIEN_LEVEL3     },
+		{ g_bot_level2upg.integer, BG_Upgrade( PCL_ALIEN_LEVEL2_UPG )->price, PCL_ALIEN_LEVEL2_UPG },
+		{ g_bot_level2   .integer, BG_Upgrade( PCL_ALIEN_LEVEL2     )->price, PCL_ALIEN_LEVEL2     },
+		{ g_bot_level1   .integer, BG_Upgrade( PCL_ALIEN_LEVEL1     )->price, PCL_ALIEN_LEVEL1     },
+		{ g_bot_level0   .integer, BG_Upgrade( PCL_ALIEN_LEVEL0     )->price, PCL_ALIEN_LEVEL0     },
+	};
+
+	for ( auto const& cl : classes )
 	{
-		if ( BotEvolveToClass( self, PCL_ALIEN_LEVEL3 ) )
+		if ( cl.authorized && BotCanEvolveToClass( self, cl.class_ ) && BotEvolveToClass( self, cl.class_ ) )
 		{
-			status = STATUS_SUCCESS;
-		}
-	}
-	else if ( BotCanEvolveToClass( self, PCL_ALIEN_LEVEL2_UPG ) && g_bot_level2upg.integer )
-	{
-		if ( BotEvolveToClass( self, PCL_ALIEN_LEVEL2_UPG ) )
-		{
-			status = STATUS_SUCCESS;
-		}
-	}
-	else if ( BotCanEvolveToClass( self, PCL_ALIEN_LEVEL2 ) && g_bot_level2.integer )
-	{
-		if ( BotEvolveToClass( self, PCL_ALIEN_LEVEL2 ) )
-		{
-			status = STATUS_SUCCESS;
-		}
-	}
-	else if ( BotCanEvolveToClass( self, PCL_ALIEN_LEVEL1 ) && g_bot_level1.integer )
-	{
-		if ( BotEvolveToClass( self, PCL_ALIEN_LEVEL1 ) )
-		{
-			status = STATUS_SUCCESS;
-		}
-	}
-	else if ( BotCanEvolveToClass( self, PCL_ALIEN_LEVEL0 ) )
-	{
-		if ( BotEvolveToClass( self, PCL_ALIEN_LEVEL0 ) )
-		{
-			status = STATUS_SUCCESS;
+			return STATUS_SUCCESS;
 		}
 	}
 
-	return status;
+	return STATUS_FAILURE;
 }
 
 AINodeStatus_t BotActionHealA( gentity_t *self, AIGenericNode_t *node )

@@ -109,7 +109,11 @@ float BotGetHealScore( gentity_t *self )
 	}
 	else
 	{
-		distToHealer = self->botMind->closestBuildings[ BA_H_MEDISTAT ].distance;
+		auto const& medistat = self->botMind->closestBuildings[ BA_H_MEDISTAT ];
+		if ( medistat.ent && medistat.ent->target )
+		{
+			distToHealer = medistat.distance;
+		}
 	}
 
 	percentHealth = Entities::HealthFraction(self);

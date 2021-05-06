@@ -825,6 +825,10 @@ void BotTargetToRouteTarget( gentity_t *self, botTarget_t target, botRouteTarget
 		if ( target.ent->client )
 		{
 			BG_ClassBoundingBox( ( class_t ) target.ent->client->ps.stats[ STAT_CLASS ], mins, maxs, nullptr, nullptr, nullptr );
+			if ( BotTargetIsPlayer( target ) )
+			{
+				routeTarget->type = botRouteTargetType_t::BOT_TARGET_DYNAMIC;
+			}
 		}
 		else if ( target.ent->s.eType == entityType_t::ET_BUILDABLE )
 		{
@@ -834,11 +838,6 @@ void BotTargetToRouteTarget( gentity_t *self, botTarget_t target, botRouteTarget
 		{
 			VectorCopy( target.ent->r.mins, mins );
 			VectorCopy( target.ent->r.maxs, maxs );
-		}
-
-		if ( BotTargetIsPlayer( target ) )
-		{
-			routeTarget->type = botRouteTargetType_t::BOT_TARGET_DYNAMIC;
 		}
 	}
 	else
@@ -1806,66 +1805,62 @@ bool BotEvolveToClass( gentity_t *ent, class_t newClass )
 	clientNum = ent->client - level.clients;
 
 	//if we are not currently spectating, we are attempting evolution
-	if ( ent->client->pers.classSelection != PCL_NONE )
+	if ( ent->client->pers.classSelection == PCL_NONE )
 	{
-		if ( ( ent->client->ps.stats[ STAT_STATE ] & SS_WALLCLIMBING ) )
-		{
-			ent->client->pers.cmd.upmove = 0;
-		}
+		return false;
+	}
 
-		//check there are no humans nearby
-		VectorAdd( ent->client->ps.origin, range, maxs );
-		VectorSubtract( ent->client->ps.origin, range, mins );
+	if ( !G_ActiveOvermind() )
+	{
+		return false;
+	}
 
-		num = trap_EntitiesInBox( mins, maxs, entityList, MAX_GENTITIES );
-		for ( i = 0; i < num; i++ )
-		{
-			other = &g_entities[ entityList[ i ] ];
+	if ( ( ent->client->ps.stats[ STAT_STATE ] & SS_WALLCLIMBING ) )
+	{
+		ent->client->pers.cmd.upmove = 0;
+	}
 
-			if ( ( other->client && other->client->pers.team == TEAM_HUMANS ) ||
-				( other->s.eType == entityType_t::ET_BUILDABLE && other->buildableTeam == TEAM_HUMANS ) )
-			{
-				return false;
-			}
-		}
+	//check there are no humans nearby
+	VectorAdd( ent->client->ps.origin, range, maxs );
+	VectorSubtract( ent->client->ps.origin, range, mins );
 
-		if ( !G_ActiveOvermind() )
-		{
-			return false;
-		}
+	num = trap_EntitiesInBox( mins, maxs, entityList, MAX_GENTITIES );
+	for ( i = 0; i < num; i++ )
+	{
+		other = &g_entities[ entityList[ i ] ];
 
-		evolveInfo = BG_ClassEvolveInfoFromTo( currentClass, newClass );
-
-		if ( G_RoomForClassChange( ent, newClass, infestOrigin ) )
-		{
-			//...check we can evolve to that class
-			if ( evolveInfo.classIsUnlocked && evolveInfo.evolveCost > 0 /* no devolving */ &&
-					ent->client->ps.persistant[ PERS_CREDIT ] >= evolveInfo.evolveCost )
-			{
-				ent->client->pers.evolveHealthFraction =
-					Math::Clamp( Entities::HealthFraction(ent), 0.0f, 1.0f );
-
-				//remove credit
-				G_AddCreditToClient( ent->client, -( short )evolveInfo.evolveCost, true );
-				ent->client->pers.classSelection = newClass;
-				BotSetNavmesh( ent, newClass );
-				ClientUserinfoChanged( clientNum, false );
-				VectorCopy( infestOrigin, ent->s.pos.trBase );
-				ClientSpawn( ent, ent, ent->s.pos.trBase, ent->s.apos.trBase );
-
-				//trap_SendServerCommand( -1, va( "print \"evolved to %s\n\"", classname) );
-
-				return true;
-			}
-			else
-				//trap_SendServerCommand( -1, va( "print \"Not enough evos to evolve to %s\n\"", classname) );
-			{
-				return false;
-			}
-		}
-		else
+		if ( G_IsPlayableTeam( G_Team( other ) ) && !G_OnSameTeam( ent, other ) )
 		{
 			return false;
+		}
+	}
+
+	evolveInfo = BG_ClassEvolveInfoFromTo( currentClass, newClass );
+
+	//TODO: lot of this is dup of BotChangeClass, except that BotChangeClass
+	//does not calls ClientSpawn. Not sure which of the option is correct,
+	//but there's deduplication to be done, there.
+	//Note: ClientUserinfoChanged() shuold probably be called last.
+	if ( G_RoomForClassChange( ent, newClass, infestOrigin ) )
+	{
+		//...check we can evolve to that class
+		if ( evolveInfo.classIsUnlocked && evolveInfo.evolveCost > 0 /* no devolving */ &&
+				ent->client->ps.persistant[ PERS_CREDIT ] >= evolveInfo.evolveCost )
+		{
+			ent->client->pers.evolveHealthFraction =
+				Math::Clamp( Entities::HealthFraction(ent), 0.0f, 1.0f );
+
+			//remove credit
+			G_AddCreditToClient( ent->client, -( short )evolveInfo.evolveCost, true );
+			ent->client->pers.classSelection = newClass;
+			BotSetNavmesh( ent, newClass );
+			ClientUserinfoChanged( clientNum, false );
+			VectorCopy( infestOrigin, ent->s.pos.trBase );
+			ClientSpawn( ent, ent, ent->s.pos.trBase, ent->s.apos.trBase );
+
+			//trap_SendServerCommand( -1, va( "print \"evolved to %s\n\"", classname) );
+
+			return true;
 		}
 	}
 	return false;

@@ -3011,3 +3011,9 @@ namespace VM {
 		playerStateSize = sizeof(playerState_t);
 	}
 }
+
+// checks if a weapon can fire
+bool playerState_t::IsWeaponReady( void ) const
+{
+	return weaponTime <= 0 && ( ammo > 0 || BG_Weapon( weapon )->infiniteAmmo );
+}

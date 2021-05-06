@@ -706,31 +706,44 @@ void BotMoveToGoal( gentity_t *self )
 			// when available (still need to implement wall walking, but that will be more complex)
 			if ( G_Team( self ) == BotGetTargetTeam( self->botMind->goal ) )
 			{
+				bool bounce_delay = self->client->time1000 >= 250;
 				switch ( self->s.weapon )
 				{
 					case WP_ALEVEL1:
 						if ( self->client->ps.weaponCharge <= 50 )
 						{
 							botCmdBuffer.angles[PITCH] = ANGLE2SHORT( -CalcAimPitch( self, self->botMind->goal, LEVEL1_POUNCE_MINPITCH ) / 3 );
-							BotFireWeapon( WPM_SECONDARY, &botCmdBuffer );
+							if ( bounce_delay )
+							{
+								BotFireWeapon( WPM_SECONDARY, &botCmdBuffer );
+							}
 						}
 						break;
 					case WP_ALEVEL2:
-						break;
 					case WP_ALEVEL2_UPG:
+						if ( bounce_delay )
+						{
+							BotJump( self );
+						}
 						break;
 					case WP_ALEVEL3:
 						if ( self->client->ps.weaponCharge < LEVEL3_POUNCE_TIME )
 						{
 							botCmdBuffer.angles[PITCH] = ANGLE2SHORT( -CalcAimPitch( self, self->botMind->goal, LEVEL3_POUNCE_JUMP_MAG ) / 3 );
-							BotFireWeapon( WPM_SECONDARY, &botCmdBuffer );
+							if ( bounce_delay )
+							{
+								BotFireWeapon( WPM_SECONDARY, &botCmdBuffer );
+							}
 						}
 						break;
 					case WP_ALEVEL3_UPG:
 						if ( self->client->ps.weaponCharge < LEVEL3_POUNCE_TIME_UPG )
 						{
 							botCmdBuffer.angles[PITCH] = ANGLE2SHORT( -CalcAimPitch( self, self->botMind->goal, LEVEL3_POUNCE_JUMP_MAG_UPG ) / 3 );
-							BotFireWeapon( WPM_SECONDARY, &botCmdBuffer );
+							if ( bounce_delay )
+							{
+								BotFireWeapon( WPM_SECONDARY, &botCmdBuffer );
+							}
 						}
 						break;
 					case WP_ALEVEL4:

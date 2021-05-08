@@ -1040,21 +1040,25 @@ AINodeStatus_t BotActionEvolve ( gentity_t *self, AIGenericNode_t* )
 		return STATUS_FAILURE;
 	}
 
+	// TODO this is an ugly duplicate!
 	// manually sorted by preference, hopefully a future patch will have a much smarter way
 	struct
 	{
-		int authorized;
-		int price;
+		int &authorized;
 		class_t class_;
+		int price( void ) const
+		{
+			return BG_Class( class_ )->price;
+		}
 	} classes[] =
 	{
-		{ g_bot_level4   .integer, BG_Upgrade( PCL_ALIEN_LEVEL4     )->price, PCL_ALIEN_LEVEL4     },
-		{ g_bot_level3upg.integer, BG_Upgrade( PCL_ALIEN_LEVEL3_UPG )->price, PCL_ALIEN_LEVEL3_UPG },
-		{ g_bot_level3   .integer, BG_Upgrade( PCL_ALIEN_LEVEL3     )->price, PCL_ALIEN_LEVEL3     },
-		{ g_bot_level2upg.integer, BG_Upgrade( PCL_ALIEN_LEVEL2_UPG )->price, PCL_ALIEN_LEVEL2_UPG },
-		{ g_bot_level2   .integer, BG_Upgrade( PCL_ALIEN_LEVEL2     )->price, PCL_ALIEN_LEVEL2     },
-		{ g_bot_level1   .integer, BG_Upgrade( PCL_ALIEN_LEVEL1     )->price, PCL_ALIEN_LEVEL1     },
-		{ g_bot_level0   .integer, BG_Upgrade( PCL_ALIEN_LEVEL0     )->price, PCL_ALIEN_LEVEL0     },
+		{ g_bot_level4   .integer, PCL_ALIEN_LEVEL4     },
+		{ g_bot_level3upg.integer, PCL_ALIEN_LEVEL3_UPG },
+		{ g_bot_level3   .integer, PCL_ALIEN_LEVEL3     },
+		{ g_bot_level2upg.integer, PCL_ALIEN_LEVEL2_UPG },
+		{ g_bot_level2   .integer, PCL_ALIEN_LEVEL2     },
+		{ g_bot_level1   .integer, PCL_ALIEN_LEVEL1     },
+		{ g_bot_level0   .integer, PCL_ALIEN_LEVEL0     },
 	};
 
 	for ( auto const& cl : classes )

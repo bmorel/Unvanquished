@@ -36,6 +36,90 @@ Scoring functions for logic
 =======================
 */
 
+// TODO this is an ugly duplicate!
+// manually sorted by preference, hopefully a future patch will have a much smarter way
+struct
+{
+	int &authorized;
+	class_t item;
+	int price( void ) const
+	{
+		return BG_Class( item )->price;
+	}
+	bool unlocked( void ) const
+	{
+		return BG_ClassUnlocked( item );
+	}
+	bool canBuyNow( void ) const
+	{
+		return authorized && unlocked();
+	}
+} classes[] =
+{
+	{ g_bot_level4   .integer, PCL_ALIEN_LEVEL4     },
+	{ g_bot_level3upg.integer, PCL_ALIEN_LEVEL3_UPG },
+	{ g_bot_level3   .integer, PCL_ALIEN_LEVEL3     },
+	{ g_bot_level2upg.integer, PCL_ALIEN_LEVEL2_UPG },
+	{ g_bot_level2   .integer, PCL_ALIEN_LEVEL2     },
+	{ g_bot_level1   .integer, PCL_ALIEN_LEVEL1     },
+	{ g_bot_level0   .integer, PCL_ALIEN_LEVEL0     },
+};
+
+// manually sorted by preference, hopefully a future patch will have a much smarter way to select weapon
+struct
+{
+	int &authorized;
+	upgrade_t item;
+	int price( void ) const
+	{
+		return BG_Upgrade( item )->price;
+	}
+	bool unlocked( void ) const
+	{
+		return BG_UpgradeUnlocked( item );
+	}
+	bool canBuyNow( void ) const
+	{
+		return authorized && unlocked();
+	}
+} armors[] =
+{
+	{ g_bot_battlesuit.integer  , UP_BATTLESUIT },
+	{ g_bot_mediumarmour.integer, UP_MEDIUMARMOUR },
+	{ g_bot_lightarmour.integer , UP_LIGHTARMOUR },
+};
+
+// manually sorted by preference, hopefully a future patch will have a much smarter way to select weapon
+struct
+{
+	int &authorized;
+	weapon_t item;
+	bool unlocked( void ) const
+	{
+		return BG_WeaponUnlocked( item );
+	}
+	bool canBuyNow( void ) const
+	{
+		return authorized && unlocked();
+	}
+	int price( void ) const
+	{
+		return BG_Weapon( item )->price;
+	}
+} weapons[] =
+{
+	{ g_bot_lcannon.integer , WP_LUCIFER_CANNON },
+	{ g_bot_flamer.integer  , WP_FLAMER },
+	// pulse rifle has lower priority to keep previous "correct" behavior
+	{ g_bot_prifle.integer  , WP_PULSE_RIFLE },
+	{ g_bot_chaingun.integer, WP_CHAINGUN },
+	{ g_bot_mdriver.integer , WP_MASS_DRIVER },
+	{ g_bot_lasgun.integer  , WP_LAS_GUN },
+	{ g_bot_shotgun.integer , WP_SHOTGUN },
+	{ g_bot_painsaw.integer , WP_PAIN_SAW },
+	{ g_bot_rifle.integer   , WP_MACHINEGUN },
+};
+
 float BotGetBaseRushScore( gentity_t *ent )
 {
 
@@ -345,46 +429,13 @@ int BotGetDesiredBuy( gentity_t *self, weapon_t &weapon, upgrade_t upgrades[], s
 		upgrades[i] = UP_NONE;
 	}
 
-	// manually sorted by preference, hopefully a future patch will have a much smarter way to select weapon
-	struct
-	{
-		int authorized;
-		int price;
-		upgrade_t upgrade;
-	} armors[] =
-	{
-		{ g_bot_battlesuit.integer  , BG_Upgrade( UP_BATTLESUIT )->price, UP_BATTLESUIT },
-		{ g_bot_mediumarmour.integer, BG_Upgrade( UP_MEDIUMARMOUR )->price, UP_MEDIUMARMOUR },
-		{ g_bot_lightarmour.integer , BG_Upgrade( UP_LIGHTARMOUR )->price, UP_LIGHTARMOUR },
-	};
-
-	// manually sorted by preference, hopefully a future patch will have a much smarter way to select weapon
-	struct
-	{
-		int authorized;
-		int price;
-		weapon_t weapon;
-	} weapons[] =
-	{
-		{ g_bot_lcannon.integer , BG_Weapon( WP_LUCIFER_CANNON )->price, WP_LUCIFER_CANNON },
-		{ g_bot_flamer.integer  , BG_Weapon( WP_FLAMER )->price        , WP_FLAMER },
-		// pulse rifle has lower priority to keep previous "correct" behavior
-		{ g_bot_prifle.integer  , BG_Weapon( WP_PULSE_RIFLE )->price   , WP_PULSE_RIFLE },
-		{ g_bot_chaingun.integer, BG_Weapon( WP_CHAINGUN )->price      , WP_CHAINGUN },
-		{ g_bot_mdriver.integer , BG_Weapon( WP_MASS_DRIVER )->price   , WP_MASS_DRIVER },
-		{ g_bot_lasgun.integer  , BG_Weapon( WP_LAS_GUN )->price       , WP_LAS_GUN },
-		{ g_bot_shotgun.integer , BG_Weapon( WP_SHOTGUN )->price       , WP_SHOTGUN },
-		{ g_bot_painsaw.integer , BG_Weapon( WP_PAIN_SAW )->price      , WP_PAIN_SAW },
-		{ g_bot_rifle.integer   , BG_Weapon( WP_MACHINEGUN )->price    , WP_MACHINEGUN },
-	};
-
 	for ( auto const &armor : armors )
 	{
 		if ( armor.authorized
-				&& BG_UpgradeUnlocked( armor.upgrade ) && usableCapital >= armor.price )
+				&& BG_UpgradeUnlocked( armor.item ) && usableCapital >= armor.price() )
 		{
-			upgrades[numUpgrades] = armor.upgrade;
-			usableCapital -= armor.price;
+			upgrades[numUpgrades] = armor.item;
+			usableCapital -= armor.price();
 			numUpgrades++;
 			break;
 		}
@@ -408,14 +459,14 @@ int BotGetDesiredBuy( gentity_t *self, weapon_t &weapon, upgrade_t upgrades[], s
 
 	for ( auto const &wp : weapons )
 	{
-		if ( wp.authorized && BG_WeaponUnlocked( wp.weapon ) && usableCapital >= wp.price )
+		if ( wp.authorized && BG_WeaponUnlocked( wp.item ) && usableCapital >= wp.price() )
 		{
-			if ( wp.weapon == WP_FLAMER && numTeamWeapons[WP_FLAMER] > numTeamWeapons[WP_PULSE_RIFLE] )
+			if ( wp.item == WP_FLAMER && numTeamWeapons[WP_FLAMER] > numTeamWeapons[WP_PULSE_RIFLE] )
 			{
 				continue;
 			}
-			weapon = wp.weapon;
-			usableCapital -= wp.price;
+			weapon = wp.item;
+			usableCapital -= wp.price();
 			break;
 		}
 	}

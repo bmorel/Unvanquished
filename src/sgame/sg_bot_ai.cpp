@@ -548,6 +548,15 @@ AINodeStatus_t BotActionTeleport( gentity_t *self, AIGenericNode_t *node )
 	return STATUS_SUCCESS;
 }
 
+AINodeStatus_t BotChangeBehavior( gentity_t *self, AIGenericNode_t *node )
+{
+	AIActionNode_t *action = ( AIActionNode_t * ) node;
+	const char *behavior = AIUnBoxString( action->params[ 0 ] );
+	G_Say( self, SAY_ALL_ADMIN, behavior );
+	//G_BotChangeBehavior( , behavior );
+	return STATUS_SUCCESS;
+}
+
 AINodeStatus_t BotActionActivateUpgrade( gentity_t *self, AIGenericNode_t *node )
 {
 	AIActionNode_t *action = ( AIActionNode_t * ) node;

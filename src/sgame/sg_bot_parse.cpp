@@ -954,6 +954,7 @@ static const struct AIActionMap_s
 	{ "strafeDodge",       BotActionStrafeDodge,       0, 0 },
 	{ "suicide",           BotActionSuicide,           0, 0 },
 	{ "teleport",          BotActionTeleport,          3, 3 },
+	{ "changeBehavior",    BotChangeBehavior,          1, 1 },
 };
 
 /*

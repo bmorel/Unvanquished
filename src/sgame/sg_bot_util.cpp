@@ -356,6 +356,25 @@ float BotGetHealScore( gentity_t *self )
 	return ( 1 + 5 * SkillModifier( self->botMind->botSkill.level ) ) * ( 1 - percentHealth ) / sqrt( timeDist );
 }
 
+// affects a score to a target to know how much it is
+// desirable to attack it.
+// The score should be based uppon several comparisons:
+// * can target be even hit if chased? (depends on it's
+//   health, it's max speed, our regular speed, it's
+//   armor and our max range)
+// * number of hits to kill (based uppon health approx to
+//   simulate understanding of target's pain noise)
+// * target's value (higher is better)
+// * target's distance from our own base
+// * target's distance from our position
+// * maybe select targets according to skill?
+// * game's age (the higher, the more interesting it is to
+//   focus buildings)
+//
+// The intent is to have bots:
+// * not chasing enemies they can not kill,
+// * defend the base as much as possible,
+// * aim at weaker targets to get more credits,
 float BotGetEnemyPriority( gentity_t *self, gentity_t *ent )
 {
 	float enemyScore;
@@ -369,15 +388,28 @@ float BotGetEnemyPriority( gentity_t *self, gentity_t *ent )
 			case WP_ALEVEL0:
 				enemyScore = 0.1;
 				break;
+			case WP_BLASTER:
+				enemyScore = 0.2;
+				break;
 			case WP_ALEVEL1:
 				enemyScore = 0.3;
 				break;
 			case WP_ALEVEL2:
+			case WP_MACHINEGUN:
+			case WP_PAIN_SAW:
+			case WP_LAS_GUN:
+			case WP_MASS_DRIVER:
 				enemyScore = 0.4;
 				break;
-			case WP_ALEVEL2_UPG:
-				enemyScore = 0.7;
+			case WP_PULSE_RIFLE:
+			default:
+				enemyScore = 0.5;
 				break;
+			case WP_CHAINGUN:
+			case WP_FLAMER:
+				enemyScore = 0.6;
+				break;
+			case WP_ALEVEL2_UPG:
 			case WP_ALEVEL3:
 				enemyScore = 0.7;
 				break;
@@ -385,37 +417,8 @@ float BotGetEnemyPriority( gentity_t *self, gentity_t *ent )
 				enemyScore = 0.8;
 				break;
 			case WP_ALEVEL4:
-				enemyScore = 1.0;
-				break;
-			case WP_BLASTER:
-				enemyScore = 0.2;
-				break;
-			case WP_MACHINEGUN:
-				enemyScore = 0.4;
-				break;
-			case WP_PAIN_SAW:
-				enemyScore = 0.4;
-				break;
-			case WP_LAS_GUN:
-				enemyScore = 0.4;
-				break;
-			case WP_MASS_DRIVER:
-				enemyScore = 0.4;
-				break;
-			case WP_CHAINGUN:
-				enemyScore = 0.6;
-				break;
-			case WP_FLAMER:
-				enemyScore = 0.6;
-				break;
-			case WP_PULSE_RIFLE:
-				enemyScore = 0.5;
-				break;
 			case WP_LUCIFER_CANNON:
 				enemyScore = 1.0;
-				break;
-			default:
-				enemyScore = 0.5;
 				break;
 		}
 	}
@@ -423,50 +426,32 @@ float BotGetEnemyPriority( gentity_t *self, gentity_t *ent )
 	{
 		switch ( ent->s.modelindex )
 		{
-			case BA_H_MGTURRET:
-				enemyScore = 0.6;
-				break;
-			case BA_H_REACTOR:
-				enemyScore = 0.5;
-				break;
-			case BA_H_ROCKETPOD:
-				enemyScore = 0.7;
-				break;
-			case BA_H_SPAWN:
-				enemyScore = 0.9;
-				break;
-			case BA_H_ARMOURY:
-				enemyScore = 0.8;
-				break;
-			case BA_H_MEDISTAT:
-				enemyScore = 0.6;
-				break;
-			case BA_A_ACIDTUBE:
-				enemyScore = 0.7;
-				break;
-			case BA_A_SPAWN:
-				enemyScore = 0.9;
-				break;
-			case BA_A_OVERMIND:
-				enemyScore = 0.5;
-				break;
-			case BA_A_HIVE:
-				enemyScore = 0.7;
-				break;
 			case BA_A_BOOSTER:
 				enemyScore = 0.4;
 				break;
-			case BA_A_TRAPPER:
-				enemyScore = 0.8;
+			case BA_H_REACTOR:
+			case BA_A_OVERMIND:
+			default:
+				enemyScore = 0.5;
 				break;
+			case BA_H_MGTURRET:
+			case BA_H_MEDISTAT:
 			case BA_A_LEECH:
-				enemyScore = 0.6;
-				break;
 			case BA_H_DRILL:
 				enemyScore = 0.6;
 				break;
-			default:
-				enemyScore = 0.5;
+			case BA_H_ROCKETPOD:
+			case BA_A_ACIDTUBE:
+			case BA_A_HIVE:
+				enemyScore = 0.7;
+				break;
+			case BA_A_TRAPPER:
+			case BA_H_ARMOURY:
+				enemyScore = 0.8;
+				break;
+			case BA_H_SPAWN:
+			case BA_A_SPAWN:
+				enemyScore = 0.9;
 				break;
 
 		}

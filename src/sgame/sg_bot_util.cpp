@@ -480,9 +480,9 @@ int BotGetDesiredBuy( gentity_t *self, weapon_t &weapon, upgrade_t upgrades[], s
 	//deeper refactoring (probably move equipments and classes into structs)
 	//and code to make bots _actually_ use other equipments.
 	unsigned int alliesNumbers[MAX_CLIENTS] = {};
-	int nbAllies = ListTeamMembers( alliesNumbers, MAX_CLIENTS, G_Team( self ) );
+	int nbTeam = ListTeamMembers( alliesNumbers, MAX_CLIENTS, G_Team( self ) );
 	int nbRadars = numTeamUpgrades[UP_RADAR];
-	bool teamNeedsRadar = 100 * ( 1 + nbRadars ) / ( 1 + nbAllies ) < 75;
+	bool teamNeedsRadar = 100 * ( 1 + nbRadars ) / nbTeam < 75;
 	if ( numUpgrades > 0 && teamNeedsRadar && g_bot_radar.integer
 			&& BG_UpgradeUnlocked( UP_RADAR ) && usableCapital >= BG_Upgrade( UP_RADAR )->price
 			&& ( BG_Upgrade( upgrades[0] )->slots & BG_Upgrade( UP_RADAR )->slots ) == 0 )
@@ -1562,9 +1562,9 @@ void ListTeamEquipment( gentity_t *self, unsigned int numUpgrades[], size_t numU
 	const team_t team = static_cast<team_t>( self->client->pers.team );
 	unsigned int alliesNumbers[MAX_CLIENTS];
 	memset( alliesNumbers, 0, sizeof( alliesNumbers ) );
-	unsigned int numAllies = ListTeamMembers( alliesNumbers, MAX_CLIENTS, team );
+	unsigned int numTeamPlayers = ListTeamMembers( alliesNumbers, MAX_CLIENTS, team );
 
-	for ( unsigned int i = 0; i < numAllies; ++i )
+	for ( unsigned int i = 0; i < numTeamPlayers; ++i )
 	{
 		gentity_t *ally = &g_entities[alliesNumbers[i]];
 		if ( ally == self )

@@ -154,13 +154,10 @@ float BotGetBaseRushScore( gentity_t *ent )
 					max_value = std::max( max_value, pcl.price() );
 				}
 			}
-			if ( max_value != 0 )
-			{
-				saving_ratio = self_value / max_value;
-				rush_score = Math::Clamp( skill_modifier + saving_ratio, 0.f, 1.f );
-			}
 			break;
 		case TEAM_HUMANS:
+			// all this code, just to know what the higher equipment cost
+			// authorized at current stage.
 			{
 				bool canUseBackpack = true;
 				int max_item_val;
@@ -195,13 +192,17 @@ float BotGetBaseRushScore( gentity_t *ent )
 					}
 				}
 				max_value += max_item_val;
-				if ( max_value != 0 )
-				{
-					saving_ratio = self_value / max_value;
-					rush_score = Math::Clamp( skill_modifier + saving_ratio, 0.f, 1.f );
-				}
 				break;
 			}
+		case TEAM_ALL:
+		case TEAM_NONE:
+		case NUM_TEAMS:
+			break;
+	}
+	if ( max_value != 0 )
+	{
+		saving_ratio = self_value / max_value;
+		rush_score = Math::Clamp( skill_modifier + saving_ratio, 0.f, 1.f );
 	}
 	return rush_score;
 }

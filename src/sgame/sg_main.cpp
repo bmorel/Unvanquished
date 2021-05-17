@@ -441,8 +441,8 @@ static cvarTable_t gameCvarTable[] =
 	// bots: buying upgrades
 	{ &g_bot_radar, "g_bot_radar", "1",  CVAR_NORESTART, 0, false, nullptr },
 	{ &g_bot_jetpack, "g_bot_jetpack", "0",  CVAR_NORESTART, 0, false, nullptr },
-	{ &g_bot_grenade, "g_bot_grenade", "0",  CVAR_NORESTART, 0, false, nullptr },
-	{ &g_bot_firebomb, "g_bot_firebomb", "0",  CVAR_NORESTART, 0, false, nullptr },
+	{ &g_bot_grenade, "g_bot_grenade", "1",  CVAR_NORESTART, 0, false, nullptr },
+	{ &g_bot_firebomb, "g_bot_firebomb", "1",  CVAR_NORESTART, 0, false, nullptr },
 
 
 	// bots: evolution

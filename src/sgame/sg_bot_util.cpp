@@ -30,6 +30,35 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 static void ListTeamEquipment( gentity_t *self, unsigned int numUpgrades[], size_t numUpgradesSize, unsigned int numWeapons[], size_t numWeaponsSize );
 static unsigned int ListTeamMembers( unsigned int allies[], size_t alliesSize, team_t team );
 
+static const int MIN_SKILL = 1;
+static const int MAX_SKILL = 9;
+static const int RANGE_SKILL = MAX_SKILL - MIN_SKILL;
+
+// computes a percent modifier out of skill level which is easier to work with
+static float SkillModifier( int botSkill )
+{
+	return static_cast<float>( botSkill - MIN_SKILL ) / RANGE_SKILL;
+}
+
+void blablabla( gentity_t* self, botTarget_t& target );
+void blablabla( gentity_t* self, botTarget_t& target )
+{
+	if ( G_Team( self ) == TEAM_ALIENS  )
+	{
+		if ( target.inuse )
+		{
+			if( target.ent )
+			{
+				printf( "Targetting an entity (%s)!\n", target.ent->classname );
+				return;
+			}
+			printf( "Targetting a place!\n" );
+			return;
+		}
+		printf( "No target anymore!\n" );
+	}
+}
+
 /*
 =======================
 Scoring functions for logic
@@ -146,10 +175,7 @@ struct
 float BotGetBaseRushScore( gentity_t *ent )
 {
 	ASSERT( ent && ent->botMind && ent->client );
-	const int MIN_SKILL = 1;
-	const int MAX_SKILL = 9;
-	const int RANGE_SKILL = MAX_SKILL - MIN_SKILL;
-	const float skill_modifier = 1 - 2 * static_cast<float>( ent->botMind->botSkill.level - MIN_SKILL ) / RANGE_SKILL;
+	const float skill_modifier = 1 - 2 * SkillModifier( ent->botMind->botSkill.level );
 	int max_value = 0;
 	float saving_ratio;
 	// if nothing allowed from current stage have a cost,

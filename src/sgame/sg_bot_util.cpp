@@ -217,6 +217,16 @@ struct
 	{ g_bot_rifle.integer   , WP_MACHINEGUN },
 };
 
+// Gives a value between 0 and 1 representing how much a bot should want to rush.
+// A rush is basically: target enemy's base.
+// The idea is to have bots rushing depending on the value of their equipment,
+// their skill level and what they are currently authorized to buy.
+// Basically, higher skilled bots should save money before rushing, so that they
+// would not be naked at their death.
+// In current state of code, human bots no longer wait for battlesuit to attack,
+// but alien bots are still rushing too much, probably because of their tracking
+// ability and "speed".
+// Those problems can probably *not* be fixed in this place, though.
 // TODO: have a way to increase rush score depedning on much of mates are rushing
 //       I suppose I'll have to need a team_t struct, which would contain some
 //       modifier, itself reconstructed each "frame", increased depending on

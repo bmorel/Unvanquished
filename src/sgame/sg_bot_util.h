@@ -80,7 +80,6 @@ bool BotChangeGoalPos( gentity_t *self, vec3_t goal );
 // fighting
 void     BotResetEnemyQueue( enemyQueue_t *queue );
 bool BotEnemyIsValid( gentity_t *self, gentity_t const *enemy );
-void     BotFireWeapon( weaponMode_t mode, usercmd_t *botCmdBuffer );
 void     BotFireWeaponAI( gentity_t *self );
 void     BotClassMovement( gentity_t *self, bool inAttackRange );
 

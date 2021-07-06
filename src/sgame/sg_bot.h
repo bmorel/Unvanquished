@@ -98,7 +98,61 @@ public:
 	int         futureAimTime;
 	int         futureAimTimeInterval;
 	vec3_t      futureAim;
-	usercmd_t   cmdBuffer;
+private:
+	friend void G_BotThink( gentity_t *self );
+	friend void BotWalk( gentity_t *self, bool enable );
+	usercmd_t   m_cmdBuffer;
+public:
+	//sub-optimal solution to give bots a better press button API
+	//such an enum should be provided by Daemon, and maybe it will
+	//be propagated at some point, but for now let's try to improve
+	//AI situation.
+	//This might even allow to find a more robust solution for AIs
+	//than pressing buttons explicitly.
+	enum FakeButton
+	{
+		FB_BUTTON_ATTACK   = BUTTON_ATTACK,
+		FB_BUTTON_ATTACK2  = BUTTON_ATTACK2,
+		FB_BUTTON_ATTACK3  = BUTTON_ATTACK3,
+		FB_BUTTON_WALKING  = BUTTON_WALKING,
+		FB_BUTTON_SPRINT   = BUTTON_SPRINT,
+		FB_BUTTON_GESTURE  = BUTTON_GESTURE,
+		FB_BUTTON_ACTIVATE = BUTTON_ACTIVATE,
+	};
+	inline void PressButton( FakeButton btn ) { usercmdPressButton( m_cmdBuffer.buttons, btn ); }
+	inline void ReleaseButton( FakeButton btn ) { usercmdReleaseButton( m_cmdBuffer.buttons, btn ); }
+	inline bool ButtonPressed( FakeButton btn ) const { return usercmdButtonPressed( m_cmdBuffer.buttons, btn ); }
+	inline void SetForwardSpeed( signed char speed ) { m_cmdBuffer.forwardmove = speed; }
+	inline void SetLateralSpeed( signed char speed ) { m_cmdBuffer.rightmove = speed; }
+	inline void SetVerticalSpeed( signed char speed ) { m_cmdBuffer.upmove = speed; }
+	inline void ReverseLateralSpeed( void ) { m_cmdBuffer.rightmove = -m_cmdBuffer.rightmove; }
+	inline void StopMoves( void ) { m_cmdBuffer.forwardmove = 0; m_cmdBuffer.rightmove = 0; m_cmdBuffer.upmove = 0; }
+	inline void FireWeapon( weaponMode_t mode )
+	{
+		switch ( mode )
+		{
+			case WPM_PRIMARY:
+				PressButton( FB_BUTTON_ATTACK );
+				break;
+			case WPM_SECONDARY:
+				PressButton( FB_BUTTON_ATTACK2 );
+				break;
+			case WPM_TERTIARY:
+				PressButton( FB_BUTTON_ATTACK3 );
+				break;
+			default:
+				ASSERT( false && "Wrong mode used to FireWeapon" );
+				break;
+		}
+	}
+	inline void AimAt( vec3_t angle )
+	{
+		m_cmdBuffer.angles[0] = ANGLE2SHORT( angle[0] );
+		m_cmdBuffer.angles[1] = ANGLE2SHORT( angle[1] );
+		m_cmdBuffer.angles[2] = ANGLE2SHORT( angle[2] );
+	}
+	inline void AimAtPitch( short angle ) { m_cmdBuffer.angles[PITCH] = angle; }
+
 	botNavCmd_t nav;
 
 	int lastThink;

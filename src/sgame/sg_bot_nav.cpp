@@ -238,7 +238,7 @@ Local Bot Navigation
 
 signed char BotGetMaxMoveSpeed( gentity_t *self )
 {
-	if ( usercmdButtonPressed( self->botMind->cmdBuffer.buttons, BUTTON_WALKING ) )
+	if ( self->botMind->ButtonPressed( botMemory_t::FakeButton::FB_BUTTON_WALKING ) )
 	{
 		return 63;
 	}
@@ -248,77 +248,73 @@ signed char BotGetMaxMoveSpeed( gentity_t *self )
 
 void BotStrafeDodge( gentity_t *self )
 {
-	usercmd_t *botCmdBuffer = &self->botMind->cmdBuffer;
+	botMemory_t &mind = *self->botMind;
 	signed char speed = BotGetMaxMoveSpeed( self );
 
 	if ( self->client->time1000 >= 500 )
 	{
-		botCmdBuffer->rightmove = speed;
+		mind.SetLateralSpeed( speed );
 	}
 	else
 	{
-		botCmdBuffer->rightmove = -speed;
+		mind.SetLateralSpeed( -speed );
 	}
 
 	if ( ( self->client->time10000 % 2000 ) < 1000 )
 	{
-		botCmdBuffer->rightmove *= -1;
+		mind.ReverseLateralSpeed();
 	}
 
 	if ( ( self->client->time1000 % 300 ) >= 100 && ( self->client->time10000 % 3000 ) > 2000 )
 	{
-		botCmdBuffer->rightmove = 0;
+		mind.SetLateralSpeed( 0 );
 	}
 }
 
 void BotMoveInDir( gentity_t *self, uint32_t dir )
 {
-	usercmd_t *botCmdBuffer = &self->botMind->cmdBuffer;
+	botMemory_t &mind = *self->botMind;
 	signed char speed = BotGetMaxMoveSpeed( self );
 
 	if ( dir & MOVE_FORWARD )
 	{
-		botCmdBuffer->forwardmove = speed;
+		mind.SetForwardSpeed( speed );
 	}
 	else if ( dir & MOVE_BACKWARD )
 	{
-		botCmdBuffer->forwardmove = -speed;
+		mind.SetForwardSpeed( -speed );
 	}
 
 	if ( dir & MOVE_RIGHT )
 	{
-		botCmdBuffer->rightmove = speed;
+		mind.SetLateralSpeed( speed );
 	}
 	else if ( dir & MOVE_LEFT )
 	{
-		botCmdBuffer->rightmove = -speed;
+		mind.SetLateralSpeed( -speed );
 	}
 }
 
 void BotAlternateStrafe( gentity_t *self )
 {
-	usercmd_t *botCmdBuffer = &self->botMind->cmdBuffer;
+	botMemory_t &mind = *self->botMind;
 	signed char speed = BotGetMaxMoveSpeed( self );
 
 	if ( level.time % 8000 < 4000 )
 	{
-		botCmdBuffer->rightmove = speed;
+		mind.SetLateralSpeed( speed );
 	}
 	else
 	{
-		botCmdBuffer->rightmove = -speed;
+		mind.SetLateralSpeed( -speed );
 	}
 }
 
 void BotStandStill( gentity_t *self )
 {
-	usercmd_t *botCmdBuffer = &self->botMind->cmdBuffer;
-
 	BotWalk( self, false );
 	BotSprint( self, false );
-	botCmdBuffer->forwardmove = 0;
-	botCmdBuffer->rightmove = 0;
-	botCmdBuffer->upmove = 0;
+	self->botMind->StopMoves();
 }
 
 bool BotJump( gentity_t *self )
@@ -335,18 +331,17 @@ bool BotJump( gentity_t *self )
 		}
 	}
 
-	self->botMind->cmdBuffer.upmove = 127;
+	self->botMind->SetVerticalSpeed( 127 );
 	return true;
 }
 
 bool BotSprint( gentity_t *self, bool enable )
 {
-	usercmd_t *botCmdBuffer = &self->botMind->cmdBuffer;
 	int       staminaJumpCost;
 
 	if ( !enable )
 	{
-		usercmdReleaseButton( botCmdBuffer->buttons, BUTTON_SPRINT );
+		self->botMind->ReleaseButton( botMemory_t::FakeButton::FB_BUTTON_SPRINT );
 		return false;
 	}
 
@@ -356,37 +351,35 @@ bool BotSprint( gentity_t *self, bool enable )
 	     && self->client->ps.stats[ STAT_STAMINA ] > staminaJumpCost
 	     && self->botMind->botSkill.level >= 5 )
 	{
-		usercmdPressButton( botCmdBuffer->buttons, BUTTON_SPRINT );
+		self->botMind->PressButton( botMemory_t::FakeButton::FB_BUTTON_SPRINT );
 		BotWalk( self, false );
 		return true;
 	}
 	else
 	{
-		usercmdReleaseButton( botCmdBuffer->buttons, BUTTON_SPRINT );
+		self->botMind->ReleaseButton( botMemory_t::FakeButton::FB_BUTTON_SPRINT );
 		return false;
 	}
 }
 
 void BotWalk( gentity_t *self, bool enable )
 {
-	usercmd_t *botCmdBuffer = &self->botMind->cmdBuffer;
-
 	if ( !enable )
 	{
-		if ( usercmdButtonPressed( botCmdBuffer->buttons, BUTTON_WALKING ) )
+		if ( self->botMind->ButtonPressed( botMemory_t::FakeButton::FB_BUTTON_WALKING ) )
 		{
-			usercmdReleaseButton( botCmdBuffer->buttons, BUTTON_WALKING );
-			botCmdBuffer->forwardmove *= 2;
-			botCmdBuffer->rightmove *= 2;
+			self->botMind->ReleaseButton( botMemory_t::FakeButton::FB_BUTTON_WALKING );
+			self->botMind->m_cmdBuffer.forwardmove *= 2;
+			self->botMind->m_cmdBuffer.rightmove *= 2;
 		}
 		return;
 	}
 
-	if ( !usercmdButtonPressed( botCmdBuffer->buttons, BUTTON_WALKING ) )
+	if ( !self->botMind->ButtonPressed( botMemory_t::FakeButton::FB_BUTTON_WALKING ) )
 	{
-		usercmdPressButton( botCmdBuffer->buttons, BUTTON_WALKING );
-		botCmdBuffer->forwardmove /= 2;
-		botCmdBuffer->rightmove /= 2;
+		self->botMind->PressButton( botMemory_t::FakeButton::FB_BUTTON_WALKING );
+		self->botMind->m_cmdBuffer.forwardmove /= 2;
+		self->botMind->m_cmdBuffer.rightmove /= 2;
 	}
 }
 
@@ -581,7 +574,7 @@ bool BotAvoidObstacles( gentity_t *self, vec3_t dir )
 	return false;
 }
 
-void BotDirectionToUsercmd( gentity_t *self, vec3_t dir, usercmd_t *cmd )
+void BotDirectionToUsercmd( gentity_t *self, vec3_t dir, botMemory_t& mind )
 {
 	vec3_t forward;
 	vec3_t right;
@@ -604,25 +597,23 @@ void BotDirectionToUsercmd( gentity_t *self, vec3_t dir, usercmd_t *cmd )
 	if ( Q_fabs( forwardmove ) > Q_fabs( rightmove ) )
 	{
 		float highestforward = forwardmove < 0 ? -speed : speed;
-
 		float highestright = highestforward * rightmove / forwardmove;
 
-		cmd->forwardmove = ClampChar( highestforward );
-		cmd->rightmove = ClampChar( highestright );
+		mind.SetForwardSpeed( ClampChar( highestforward ) );
+		mind.SetLateralSpeed( ClampChar( highestright ) );
 	}
 	else if ( rightmove != 0 )
 	{
 		float highestright = rightmove < 0 ? -speed : speed;
-
 		float highestforward = highestright * forwardmove / rightmove;
 
-		cmd->forwardmove = ClampChar( highestforward );
-		cmd->rightmove = ClampChar( highestright );
+		mind.SetForwardSpeed( ClampChar( highestforward ) );
+		mind.SetLateralSpeed( ClampChar( highestright ) );
 	}
 	else
 	{
-		cmd->forwardmove = 0;
-		cmd->rightmove = 0;
+		mind.SetForwardSpeed( 0 );
+		mind.SetLateralSpeed( 0 );
 	}
 }
 
@@ -636,7 +627,7 @@ void BotSeek( gentity_t *self, vec3_t direction )
 	VectorNormalize( direction );
 
 	// move directly toward the target
-	BotDirectionToUsercmd( self, direction, &self->botMind->cmdBuffer );
+	BotDirectionToUsercmd( self, direction, *self->botMind );
 
 	VectorMA( viewOrigin, 100, direction, seekPos );
 
@@ -686,9 +677,7 @@ void BotMoveToGoal( gentity_t *self )
 	if ( self->client->pers.team == TEAM_HUMANS
 	     && self->client->ps.stats[ STAT_STAMINA ] < staminaJumpCost )
 	{
-		usercmd_t *botCmdBuffer = &self->botMind->cmdBuffer;
-
-		usercmdReleaseButton( botCmdBuffer->buttons, BUTTON_SPRINT );
+		self->botMind->ReleaseButton( botMemory_t::FakeButton::FB_BUTTON_SPRINT );
 
 		// walk to regain stamina
 		BotWalk( self, true );

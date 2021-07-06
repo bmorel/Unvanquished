@@ -1165,7 +1165,6 @@ void BotAimAtEnemy( gentity_t *self )
 	vec3_t viewOrigin;
 	vec3_t newAim;
 	vec3_t angles;
-	int i;
 	float frac;
 	gentity_t const*enemy = self->botMind->goal().ent;
 
@@ -1187,17 +1186,12 @@ void BotAimAtEnemy( gentity_t *self )
 	VectorSet( self->client->ps.delta_angles, 0, 0, 0 );
 	vectoangles( newAim, angles );
 
-	for ( i = 0; i < 3; i++ )
-	{
-		self->botMind->cmdBuffer.angles[ i ] = ANGLE2SHORT( angles[ i ] );
-	}
+	self->botMind->AimAt( angles );
 }
 
 void BotAimAtLocation( gentity_t *self, vec3_t target )
 {
 	vec3_t aimVec, aimAngles, viewBase;
-	int i;
-	usercmd_t *rAngles = &self->botMind->cmdBuffer;
 
 	if ( !self->client )
 	{
@@ -1211,16 +1205,7 @@ void BotAimAtLocation( gentity_t *self, vec3_t target )
 
 	VectorSet( self->client->ps.delta_angles, 0.0f, 0.0f, 0.0f );
 
-	for ( i = 0; i < 3; i++ )
-	{
-		aimAngles[i] = ANGLE2SHORT( aimAngles[i] );
-	}
-
-	//save bandwidth
-	SnapVector( aimAngles );
-	rAngles->angles[0] = aimAngles[0];
-	rAngles->angles[1] = aimAngles[1];
-	rAngles->angles[2] = aimAngles[2];
+	self->botMind->AimAt( aimAngles );
 }
 
 void BotSlowAim( gentity_t *self, vec3_t target, float slowAmount )
@@ -1388,25 +1373,8 @@ Misc Bot Stuff
 ========================
 */
 
-void BotFireWeapon( weaponMode_t mode, usercmd_t *botCmdBuffer )
-{
-	if ( mode == WPM_PRIMARY )
-	{
-		usercmdPressButton( botCmdBuffer->buttons, BUTTON_ATTACK );
-	}
-	else if ( mode == WPM_SECONDARY )
-	{
-		usercmdPressButton( botCmdBuffer->buttons, BUTTON_ATTACK2 );
-	}
-	else if ( mode == WPM_TERTIARY )
-	{
-		usercmdPressButton( botCmdBuffer->buttons, BUTTON_ATTACK3 );
-	}
-}
 void BotClassMovement( gentity_t *self, bool inAttackRange )
 {
-	usercmd_t *botCmdBuffer = &self->botMind->cmdBuffer;
-
 	switch ( self->client->ps.stats[STAT_CLASS] )
 	{
 		case PCL_ALIEN_LEVEL0:
@@ -1439,7 +1407,7 @@ void BotClassMovement( gentity_t *self, bool inAttackRange )
 			//use rush to approach faster
 			if ( !inAttackRange )
 			{
-				BotFireWeapon( WPM_SECONDARY, botCmdBuffer );
+				self->botMind->FireWeapon( WPM_SECONDARY );
 			}
 			break;
 		default:
@@ -1499,21 +1467,30 @@ float CalcAimPitch( gentity_t *self, botTarget_t target, vec_t launchSpeed )
 	angle = RAD2DEG( angle );
 	return angle;
 }
-float CalcPounceAimPitch( gentity_t *self, botTarget_t target )
-{
-	vec_t speed = ( self->client->ps.stats[STAT_CLASS] == PCL_ALIEN_LEVEL3 ) ? LEVEL3_POUNCE_JUMP_MAG : LEVEL3_POUNCE_JUMP_MAG_UPG;
-	return CalcAimPitch( self, target, speed );
 
-	//in usrcmd angles, a positive angle is down, so multiply angle by -1
-	// botCmdBuffer->angles[PITCH] = ANGLE2SHORT(-angle);
-}
-float CalcBarbAimPitch( gentity_t *self, botTarget_t target )
+//compute and apply correct aim pitch to hit target
+float CalcDragoonAimPitch( gentity_t *self, weaponMode_t mode )
 {
-	vec_t speed = LEVEL3_BOUNCEBALL_SPEED;
-	return CalcAimPitch( self, target, speed );
-
-	//in usrcmd angles, a positive angle is down, so multiply angle by -1
-	//botCmdBuffer->angles[PITCH] = ANGLE2SHORT(-angle);
+	vec_t speed;
+	botTarget_t target = self->botMind->goal();
+	switch( mode )
+	{
+		case WPM_SECONDARY:
+			speed = ( self->client->ps.stats[STAT_CLASS] == PCL_ALIEN_LEVEL3 ) ? LEVEL3_POUNCE_JUMP_MAG : LEVEL3_POUNCE_JUMP_MAG_UPG;
+			break;
+		case WPM_TERTIARY:
+			speed = LEVEL3_BOUNCEBALL_SPEED;
+			break;
+		case WPM_PRIMARY:
+		case WPM_DECONSTRUCT:
+		case WPM_DECONSTRUCT_SELECT_TARGET:
+		case WPM_DECONSTRUCT_LONG:
+		case WPM_NOTFIRING:
+		case WPM_NUM_WEAPONMODES:
+		case WPM_NONE:
+			return 0.f;
+	}
+	return ANGLE2SHORT( -CalcAimPitch( self, target, speed ) );
 }
 
 void BotFireWeaponAI( gentity_t *self )
@@ -1523,7 +1500,6 @@ void BotFireWeaponAI( gentity_t *self )
 	vec3_t forward, right, up;
 	vec3_t muzzle;
 	trace_t trace;
-	usercmd_t *botCmdBuffer = &self->botMind->cmdBuffer;
 
 	AngleVectors( self->client->ps.viewangles, forward, right, up );
 	G_CalcMuzzlePoint( self, forward, right, up, muzzle );
@@ -1536,21 +1512,21 @@ void BotFireWeaponAI( gentity_t *self )
 		case WP_ABUILD:
 			if ( distance <= ABUILDER_CLAW_RANGE )
 			{
-				BotFireWeapon( WPM_SECONDARY, botCmdBuffer );
+				self->botMind->FireWeapon( WPM_SECONDARY );
 			}
 			else
 			{
-				usercmdPressButton( botCmdBuffer->buttons, BUTTON_GESTURE );    //make cute granger sounds to ward off the would be attackers
+				self->botMind->PressButton( botMemory_t::FakeButton::FB_BUTTON_GESTURE ); //make cute granger sounds to ward off the would be attackers
 			}
 			break;
 		case WP_ABUILD2:
 			if ( distance <= ABUILDER_CLAW_RANGE )
 			{
-				BotFireWeapon( WPM_SECONDARY, botCmdBuffer );    //swipe
+				self->botMind->FireWeapon( WPM_SECONDARY ); //swipe
 			}
 			else
 			{
-				BotFireWeapon( WPM_TERTIARY, botCmdBuffer );    //blob launcher
+				self->botMind->FireWeapon( WPM_TERTIARY ); //blob launcher
 			}
 			break;
 		case WP_ALEVEL0:
@@ -1558,72 +1534,72 @@ void BotFireWeaponAI( gentity_t *self )
 		case WP_ALEVEL1:
 			if ( distance < LEVEL1_CLAW_RANGE )
 			{
-				BotFireWeapon( WPM_PRIMARY, botCmdBuffer ); //mantis swipe
+				self->botMind->FireWeapon( WPM_PRIMARY ); //mantis swipe
 			}
 			else if ( self->client->ps.weaponCharge == 0 )
 			{
 				BotMoveInDir( self, MOVE_FORWARD );
-				BotFireWeapon( WPM_SECONDARY, botCmdBuffer ); //mantis forward pounce
+				self->botMind->FireWeapon( WPM_SECONDARY ); //mantis forward pounce
 			}
 			break;
 		case WP_ALEVEL2:
-			BotFireWeapon( WPM_PRIMARY, botCmdBuffer ); //mara swipe
+			self->botMind->FireWeapon( WPM_PRIMARY ); //mara swipe
 			break;
 		case WP_ALEVEL2_UPG:
 			if ( distance <= LEVEL2_CLAW_U_RANGE )
 			{
-				BotFireWeapon( WPM_PRIMARY, botCmdBuffer );    //mara swipe
+				self->botMind->FireWeapon( WPM_PRIMARY ); //mara swipe
 			}
 			else
 			{
-				BotFireWeapon( WPM_SECONDARY, botCmdBuffer );    //mara lightning
+				self->botMind->FireWeapon( WPM_SECONDARY ); //mara lightning
 			}
 			break;
 		case WP_ALEVEL3:
 			if ( distance > LEVEL3_CLAW_RANGE && self->client->ps.weaponCharge < LEVEL3_POUNCE_TIME )
 			{
-				botCmdBuffer->angles[PITCH] = ANGLE2SHORT( -CalcPounceAimPitch( self, self->botMind->goal() ) ); //compute and apply correct aim pitch to hit target
-				BotFireWeapon( WPM_SECONDARY, botCmdBuffer ); //goon pounce
+				self->botMind->AimAtPitch( CalcDragoonAimPitch( self, WPM_SECONDARY ) );
+				self->botMind->FireWeapon( WPM_SECONDARY ); //goon pounce
 			}
 			else
 			{
-				BotFireWeapon( WPM_PRIMARY, botCmdBuffer );    //goon chomp
+				self->botMind->FireWeapon( WPM_PRIMARY ); //goon chomp
 			}
 			break;
 		case WP_ALEVEL3_UPG:
 			if ( self->client->ps.ammo > 0 && distance > LEVEL3_CLAW_UPG_RANGE )
 			{
-				botCmdBuffer->angles[PITCH] = ANGLE2SHORT( -CalcBarbAimPitch( self, self->botMind->goal() ) ); //compute and apply correct aim pitch to hit target
-				BotFireWeapon( WPM_TERTIARY, botCmdBuffer ); //goon barb
+				self->botMind->AimAtPitch( CalcDragoonAimPitch( self, WPM_TERTIARY ) );
+				self->botMind->FireWeapon( WPM_TERTIARY ); //goon barb
 			}
 			else if ( distance > LEVEL3_CLAW_UPG_RANGE && self->client->ps.weaponCharge < LEVEL3_POUNCE_TIME_UPG )
 			{
-				botCmdBuffer->angles[PITCH] = ANGLE2SHORT( -CalcPounceAimPitch( self, self->botMind->goal() ) ); //compute and apply correct aim pitch to hit target
-				BotFireWeapon( WPM_SECONDARY, botCmdBuffer ); //goon pounce
+				self->botMind->AimAtPitch( CalcDragoonAimPitch( self, WPM_SECONDARY ) );
+				self->botMind->FireWeapon( WPM_SECONDARY ); //goon pounce
 			}
 			else
 			{
-				BotFireWeapon( WPM_PRIMARY, botCmdBuffer );    //goon chomp
+				self->botMind->FireWeapon( WPM_PRIMARY ); //goon chomp
 			}
 			break;
 		case WP_ALEVEL4:
 			if ( distance > LEVEL4_CLAW_RANGE && self->client->ps.weaponCharge < LEVEL4_TRAMPLE_CHARGE_MAX )
 			{
-				BotFireWeapon( WPM_SECONDARY, botCmdBuffer );    //rant charge
+				self->botMind->FireWeapon( WPM_SECONDARY ); //rant charge
 			}
 			else
 			{
-				BotFireWeapon( WPM_PRIMARY, botCmdBuffer );    //rant swipe
+				self->botMind->FireWeapon( WPM_PRIMARY );   //rant swipe
 			}
 			break;
 		case WP_LUCIFER_CANNON:
 			if ( self->client->ps.weaponCharge < LCANNON_CHARGE_TIME_MAX * Com_Clamp( 0.5, 1, random() ) )
 			{
-				BotFireWeapon( WPM_PRIMARY, botCmdBuffer );
+				self->botMind->FireWeapon( WPM_PRIMARY );
 			}
 			break;
 		default:
-			BotFireWeapon( WPM_PRIMARY, botCmdBuffer );
+			self->botMind->FireWeapon( WPM_PRIMARY );
 	}
 }
 

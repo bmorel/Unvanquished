@@ -1025,8 +1025,7 @@ AINodeStatus_t BotActionResetStuckTime( gentity_t *self, AIGenericNode_t* )
 
 AINodeStatus_t BotActionGesture( gentity_t *self, AIGenericNode_t* )
 {
-	usercmd_t *botCmdBuffer = &self->botMind->cmdBuffer;
-	usercmdPressButton( botCmdBuffer->buttons, BUTTON_GESTURE );
+	self->botMind->PressButton( botMemory_t::FakeButton::FB_BUTTON_GESTURE );
 	return AINodeStatus_t::STATUS_SUCCESS;
 }
 

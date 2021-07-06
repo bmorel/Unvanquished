@@ -389,8 +389,8 @@ void G_BotThink( gentity_t *self )
 	vec3_t     nudge;
 	botRouteTarget_t routeTarget;
 
-	self->botMind->cmdBuffer = self->client->pers.cmd;
-	botCmdBuffer = &self->botMind->cmdBuffer;
+	self->botMind->m_cmdBuffer = self->client->pers.cmd;
+	botCmdBuffer = &self->botMind->m_cmdBuffer;
 
 	//reset command buffer
 	usercmdClearButtons( botCmdBuffer->buttons );
@@ -449,7 +449,7 @@ void G_BotThink( gentity_t *self )
 	// if we were nudged...
 	VectorAdd( self->client->ps.velocity, nudge, self->client->ps.velocity );
 
-	self->client->pers.cmd = self->botMind->cmdBuffer;
+	self->client->pers.cmd = self->botMind->m_cmdBuffer;
 }
 
 void G_BotSpectatorThink( gentity_t *self )

@@ -122,9 +122,9 @@ float RadiusFromBounds2D( const vec3_t mins, const vec3_t maxs )
 
 float BotGetGoalRadius( gentity_t *self )
 {
-	if ( BotTargetIsEntity( self->botMind->goal ) )
+	if ( BotTargetIsEntity( self->botMind->goal() ) )
 	{
-		botTarget_t *t = &self->botMind->goal;
+		botTarget_t const*t = &self->botMind->goal();
 		if ( t->ent->s.modelindex == BA_H_MEDISTAT || t->ent->s.modelindex == BA_A_BOOSTER )
 		{
 			return self->r.maxs[0] + t->ent->r.maxs[0];
@@ -144,14 +144,14 @@ bool GoalInRange( gentity_t *self, float r )
 {
 	gentity_t *ent = nullptr;
 
-	if ( !BotTargetIsEntity( self->botMind->goal ) )
+	if ( !BotTargetIsEntity( self->botMind->goal() ) )
 	{
 		return ( Distance( self->s.origin, self->botMind->nav.tpos ) < r );
 	}
 
 	while ( ( ent = G_IterateEntitiesWithinRadius( ent, self->s.origin, r ) ) )
 	{
-		if ( ent == self->botMind->goal.ent )
+		if ( ent == self->botMind->goal().ent )
 		{
 			return true;
 		}
@@ -165,7 +165,7 @@ int DistanceToGoal2DSquared( gentity_t *self )
 	vec3_t vec;
 	vec3_t goalPos;
 
-	BotGetTargetPos( self->botMind->goal, goalPos );
+	BotGetTargetPos( self->botMind->goal(), goalPos );
 
 	VectorSubtract( goalPos, self->s.origin, vec );
 
@@ -181,7 +181,7 @@ int DistanceToGoal( gentity_t *self )
 	{
 		return -1;
 	}
-	BotGetTargetPos( self->botMind->goal, targetPos );
+	BotGetTargetPos( self->botMind->goal(), targetPos );
 	VectorCopy( self->s.origin, selfPos );
 	return Distance( selfPos, targetPos );
 }
@@ -195,7 +195,7 @@ int DistanceToGoalSquared( gentity_t *self )
 	{
 		return -1;
 	}
-	BotGetTargetPos( self->botMind->goal, targetPos );
+	BotGetTargetPos( self->botMind->goal(), targetPos );
 	VectorCopy( self->s.origin, selfPos );
 	return DistanceSquared( selfPos, targetPos );
 }

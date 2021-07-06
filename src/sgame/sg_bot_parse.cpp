@@ -91,19 +91,19 @@ static AIValue_t botTeam( gentity_t *self, const AIValue_t* )
 
 static AIValue_t goalTeam( gentity_t *self, const AIValue_t* )
 {
-	return AIBoxInt( G_Team( self->botMind->goal.ent ) );
+	return AIBoxInt( G_Team( self->botMind->goal().ent ) );
 }
 
 static AIValue_t goalType( gentity_t *self, const AIValue_t* )
 {
-	return AIBoxInt( Util::ordinal(BotGetTargetType( self->botMind->goal )) );
+	return AIBoxInt( Util::ordinal(BotGetTargetType( self->botMind->goal() )) );
 }
 
 // TODO: Check if we can just check for HealthComponent.
 static AIValue_t goalDead( gentity_t *self, const AIValue_t* )
 {
 	bool dead = false;
-	botTarget_t *goal = &self->botMind->goal;
+	botTarget_t const*goal = &self->botMind->goal();
 
 	if ( !BotTargetIsEntity( *goal ) )
 	{
@@ -113,7 +113,7 @@ static AIValue_t goalDead( gentity_t *self, const AIValue_t* )
 	{
 		dead = true;
 	}
-	else if ( !Entities::IsAlive( self->botMind->goal.ent ) )
+	else if ( !Entities::IsAlive( self->botMind->goal().ent ) )
 	{
 		dead = true;
 	}
@@ -131,12 +131,12 @@ static AIValue_t goalDead( gentity_t *self, const AIValue_t* )
 
 static AIValue_t goalBuildingType( gentity_t *self, const AIValue_t* )
 {
-	if ( BotGetTargetType( self->botMind->goal ) != entityType_t::ET_BUILDABLE )
+	if ( BotGetTargetType( self->botMind->goal() ) != entityType_t::ET_BUILDABLE )
 	{
 		return AIBoxInt( BA_NONE );
 	}
 
-	return AIBoxInt( self->botMind->goal.ent->s.modelindex );
+	return AIBoxInt( self->botMind->goal().ent->s.modelindex );
 }
 
 static AIValue_t currentWeapon( gentity_t *self, const AIValue_t* )
@@ -199,7 +199,7 @@ static AIValue_t inAttackRange( gentity_t *self, const AIValue_t *params )
 		return AIBoxInt( false );
 	}
 
-	BotSetTarget( &target, e.ent, nullptr );
+	target.SetTarget( e.ent );
 
 	if ( BotTargetInAttackRange( self, target ) )
 	{
@@ -220,7 +220,7 @@ static AIValue_t isVisible( gentity_t *self, const AIValue_t *params )
 		return AIBoxInt( false );
 	}
 
-	BotSetTarget( &target, e.ent, nullptr );
+	target.SetTarget( e.ent );
 
 	if ( BotTargetIsVisible( self, target, CONTENTS_SOLID ) )
 	{
@@ -251,7 +251,7 @@ static AIValue_t directPathTo( gentity_t *self, const AIValue_t *params )
 	else if ( ed.ent )
 	{
 		botTarget_t target;
-		BotSetTarget( &target, ed.ent, nullptr );
+		target.SetTarget( ed.ent );
 		return AIBoxInt( BotPathIsWalkable( self, target ) );
 	}
 

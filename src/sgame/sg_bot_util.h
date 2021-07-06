@@ -55,7 +55,6 @@ void  BotAimAtLocation( gentity_t *self, vec3_t target );
 float BotAimAngle( gentity_t *self, vec3_t pos );
 
 // targets
-void        BotSetTarget( botTarget_t *target, gentity_t const*ent, vec3_t pos );
 bool    BotTargetIsEntity( botTarget_t target );
 bool    BotTargetIsPlayer( botTarget_t target );
 bool    BotTargetIsVisible( gentity_t *self, botTarget_t target, int mask );

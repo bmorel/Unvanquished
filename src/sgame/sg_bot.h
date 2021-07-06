@@ -39,6 +39,9 @@ struct botTarget_t
 	gentity_t const *ent;
 	vec3_t coord;
 	bool inuse;
+	void SetTarget( gentity_t const* ent );
+	void SetTarget( vec3_t pos );
+	void SetTarget( void );
 };
 
 #define MAX_ENEMY_QUEUE 32
@@ -73,7 +76,14 @@ struct botMemory_t
 	//team the bot is on when added
 	team_t botTeam;
 
-	botTarget_t goal;
+private:
+	friend bool BotChangeGoal( gentity_t *self, botTarget_t target );
+	botTarget_t m_goal;
+public:
+	botTarget_t const& goal( void ) const { return m_goal; }
+	inline void SetTarget( gentity_t const* ent ) { m_goal.SetTarget( ent ); }
+	inline void SetTarget( vec3_t pos ) { m_goal.SetTarget( pos ); }
+	inline void SetTarget( void ) { m_goal.SetTarget(); }
 
 	botSkill_t botSkill;
 	botEntityAndDistance_t bestEnemy;

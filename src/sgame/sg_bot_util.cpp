@@ -572,7 +572,7 @@ void BotFindDamagedFriendlyStructure( gentity_t *self )
 bool BotEntityIsVisible( gentity_t *self, gentity_t *target, int mask )
 {
 	botTarget_t bt;
-	BotSetTarget( &bt, target, nullptr );
+	bt.SetTarget( target );
 	return BotTargetIsVisible( self, bt, mask );
 }
 
@@ -607,7 +607,7 @@ gentity_t* BotFindBestEnemy( gentity_t *self )
 			continue;
 		}
 
-		if ( target == self->botMind->goal.ent )
+		if ( target == self->botMind->goal().ent )
 		{
 			continue;
 		}
@@ -692,7 +692,7 @@ botTarget_t BotGetRushTarget( gentity_t *self )
 			rushTarget = self->botMind->closestBuildings[BA_H_REACTOR].ent;
 		}
 	}
-	BotSetTarget( &target, rushTarget, nullptr );
+	target.SetTarget( rushTarget );
 	return target;
 }
 
@@ -715,7 +715,7 @@ botTarget_t BotGetRetreatTarget( gentity_t *self )
 			retreatTarget = self->botMind->closestBuildings[BA_A_OVERMIND].ent;
 		}
 	}
-	BotSetTarget( &target, retreatTarget, nullptr );
+	target.SetTarget( retreatTarget );
 	return target;
 }
 
@@ -725,7 +725,7 @@ botTarget_t BotGetRoamTarget( gentity_t *self )
 	vec3_t targetPos;
 
 	BotFindRandomPointOnMesh( self, targetPos );
-	BotSetTarget( &target, nullptr, targetPos );
+	target.SetTarget( targetPos );
 	return target;
 }
 
@@ -734,28 +734,6 @@ botTarget_t BotGetRoamTarget( gentity_t *self )
 BotTarget Helpers
 ========================
 */
-
-void BotSetTarget( botTarget_t *target, gentity_t const*ent, vec3_t pos )
-{
-	if ( ent )
-	{
-		target->ent = ent;
-		VectorClear( target->coord );
-		target->inuse = true;
-	}
-	else if ( pos )
-	{
-		target->ent = nullptr;
-		VectorCopy( pos, target->coord );
-		target->inuse = true;
-	}
-	else
-	{
-		target->ent = nullptr;
-		VectorClear( target->coord );
-		target->inuse = false;
-	}
-}
 
 bool BotTargetIsEntity( botTarget_t target )
 {
@@ -896,7 +874,7 @@ bool BotChangeGoal( gentity_t *self, botTarget_t target )
 		return false;
 	}
 
-	self->botMind->goal = target;
+	self->botMind->m_goal = target;
 	self->botMind->nav.directPathToGoal = false;
 	return true;
 }
@@ -904,14 +882,14 @@ bool BotChangeGoal( gentity_t *self, botTarget_t target )
 bool BotChangeGoalEntity( gentity_t *self, gentity_t const *goal )
 {
 	botTarget_t target;
-	BotSetTarget( &target, goal, nullptr );
+	target.SetTarget( goal );
 	return BotChangeGoal( self, target );
 }
 
 bool BotChangeGoalPos( gentity_t *self, vec3_t goal )
 {
 	botTarget_t target;
-	BotSetTarget( &target, nullptr, goal );
+	target.SetTarget( goal );
 	return BotChangeGoal( self, target );
 }
 
@@ -1175,7 +1153,7 @@ void BotPredictPosition( gentity_t *self, gentity_t const *predict, vec3_t pos, 
 {
 	botTarget_t target;
 	vec3_t aimLoc;
-	BotSetTarget( &target, predict, nullptr );
+	target.SetTarget( predict );
 	BotGetIdealAimLocation( self, target, aimLoc );
 	VectorMA( aimLoc, time / 1000.0f, predict->s.apos.trDelta, pos );
 }
@@ -1189,7 +1167,7 @@ void BotAimAtEnemy( gentity_t *self )
 	vec3_t angles;
 	int i;
 	float frac;
-	gentity_t const*enemy = self->botMind->goal.ent;
+	gentity_t const*enemy = self->botMind->goal().ent;
 
 	if ( self->botMind->futureAimTime < level.time )
 	{
@@ -1450,7 +1428,7 @@ void BotClassMovement( gentity_t *self, bool inAttackRange )
 		case PCL_ALIEN_LEVEL3:
 			break;
 		case PCL_ALIEN_LEVEL3_UPG:
-			if ( BotGetTargetType( self->botMind->goal ) == entityType_t::ET_BUILDABLE && self->client->ps.ammo > 0
+			if ( BotGetTargetType( self->botMind->goal() ) == entityType_t::ET_BUILDABLE && self->client->ps.ammo > 0
 				&& inAttackRange )
 			{
 				//dont move when sniping buildings
@@ -1549,7 +1527,7 @@ void BotFireWeaponAI( gentity_t *self )
 
 	AngleVectors( self->client->ps.viewangles, forward, right, up );
 	G_CalcMuzzlePoint( self, forward, right, up, muzzle );
-	BotGetIdealAimLocation( self, self->botMind->goal, targetPos );
+	BotGetIdealAimLocation( self, self->botMind->goal(), targetPos );
 
 	trap_Trace( &trace, muzzle, nullptr, nullptr, targetPos, ENTITYNUM_NONE, MASK_SHOT, 0 );
 	distance = Distance( muzzle, trace.endpos );
@@ -1604,7 +1582,7 @@ void BotFireWeaponAI( gentity_t *self )
 		case WP_ALEVEL3:
 			if ( distance > LEVEL3_CLAW_RANGE && self->client->ps.weaponCharge < LEVEL3_POUNCE_TIME )
 			{
-				botCmdBuffer->angles[PITCH] = ANGLE2SHORT( -CalcPounceAimPitch( self, self->botMind->goal ) ); //compute and apply correct aim pitch to hit target
+				botCmdBuffer->angles[PITCH] = ANGLE2SHORT( -CalcPounceAimPitch( self, self->botMind->goal() ) ); //compute and apply correct aim pitch to hit target
 				BotFireWeapon( WPM_SECONDARY, botCmdBuffer ); //goon pounce
 			}
 			else
@@ -1615,12 +1593,12 @@ void BotFireWeaponAI( gentity_t *self )
 		case WP_ALEVEL3_UPG:
 			if ( self->client->ps.ammo > 0 && distance > LEVEL3_CLAW_UPG_RANGE )
 			{
-				botCmdBuffer->angles[PITCH] = ANGLE2SHORT( -CalcBarbAimPitch( self, self->botMind->goal ) ); //compute and apply correct aim pitch to hit target
+				botCmdBuffer->angles[PITCH] = ANGLE2SHORT( -CalcBarbAimPitch( self, self->botMind->goal() ) ); //compute and apply correct aim pitch to hit target
 				BotFireWeapon( WPM_TERTIARY, botCmdBuffer ); //goon barb
 			}
 			else if ( distance > LEVEL3_CLAW_UPG_RANGE && self->client->ps.weaponCharge < LEVEL3_POUNCE_TIME_UPG )
 			{
-				botCmdBuffer->angles[PITCH] = ANGLE2SHORT( -CalcPounceAimPitch( self, self->botMind->goal ) ); //compute and apply correct aim pitch to hit target
+				botCmdBuffer->angles[PITCH] = ANGLE2SHORT( -CalcPounceAimPitch( self, self->botMind->goal() ) ); //compute and apply correct aim pitch to hit target
 				BotFireWeapon( WPM_SECONDARY, botCmdBuffer ); //goon pounce
 			}
 			else

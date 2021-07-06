@@ -437,9 +437,9 @@ void G_BotThink( gentity_t *self )
 	}
 
 	// always update the path corridor
-	if ( self->botMind->goal.inuse )
+	if ( self->botMind->goal().inuse )
 	{
-		BotTargetToRouteTarget( self, self->botMind->goal, &routeTarget );
+		BotTargetToRouteTarget( self, self->botMind->goal(), &routeTarget );
 		trap_BotUpdatePath( self->s.number, &routeTarget, &self->botMind->nav );
 		//BotClampPos( self );
 	}
@@ -489,7 +489,7 @@ void G_BotSpectatorThink( gentity_t *self )
 	}
 
 	//reset stuff
-	BotSetTarget( &self->botMind->goal, nullptr, nullptr );
+	self->botMind->SetTarget();
 	self->botMind->bestEnemy.ent = nullptr;
 	BotResetEnemyQueue( &self->botMind->enemyQueue );
 	self->botMind->currentNode = nullptr;
@@ -592,4 +592,25 @@ void G_BotFill(bool immediately)
 			}
 		}
 	}
+}
+
+void botTarget_t::SetTarget( gentity_t const* ent )
+{
+	this->ent = ent;
+	VectorClear( coord );
+	inuse = true;
+}
+
+void botTarget_t::SetTarget( vec3_t pos )
+{
+	this->ent = nullptr;
+	VectorCopy( pos, coord );
+	inuse = true;
+}
+
+void botTarget_t::SetTarget( void )
+{
+	this->ent = nullptr;
+	VectorClear( coord );
+	inuse = false;
 }

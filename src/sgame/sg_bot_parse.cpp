@@ -226,7 +226,7 @@ static AIValue_t isVisible( gentity_t *self, const AIValue_t *params )
 	{
 		if ( BotEnemyIsValid( self, e.ent ) )
 		{
-			self->botMind->enemyLastSeen = level.time;
+			self->botMind->enemyLastSeen = level.time();
 		}
 		return AIBoxInt( true );
 	}
@@ -236,7 +236,7 @@ static AIValue_t isVisible( gentity_t *self, const AIValue_t *params )
 
 static AIValue_t matchTime( gentity_t*, const AIValue_t* )
 {
-	return AIBoxInt( level.matchTime );
+	return AIBoxInt( level.matchTime() );
 }
 
 static AIValue_t directPathTo( gentity_t *self, const AIValue_t *params )
@@ -277,7 +277,7 @@ static AIValue_t alienMomentum( gentity_t*, const AIValue_t* )
 
 static AIValue_t aliveTime( gentity_t*self, const AIValue_t* )
 {
-	return AIBoxInt( level.time - self->botMind->spawnTime );
+	return AIBoxInt( level.time() - self->botMind->spawnTime );
 }
 
 static AIValue_t randomChance( gentity_t*, const AIValue_t* )
@@ -326,7 +326,7 @@ static AIValue_t percentHealth( gentity_t *self, const AIValue_t *params )
 
 static AIValue_t stuckTime( gentity_t *self, const AIValue_t* )
 {
-	return AIBoxInt( level.time - self->botMind->stuckTime );
+	return AIBoxInt( level.time() - self->botMind->stuckTime );
 }
 
 // functions accessible to the behavior tree for use in condition nodes

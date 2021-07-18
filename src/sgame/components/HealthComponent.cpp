@@ -19,7 +19,7 @@ void HealthComponent::HandlePrepareNetCode() {
 
 	if (client) {
 		if (client->ps.stats[STAT_HEALTH] != transmittedHealth) {
-			client->pers.infoChangeTime = level.time;
+			client->pers.infoChangeTime = level.time();
 		}
 		client->ps.stats[STAT_HEALTH] = transmittedHealth;
 		client->ps.stats[STAT_MAX_HEALTH] = (int)std::ceil(maxHealth);
@@ -127,7 +127,7 @@ Util::optional<Vec3> direction, int flags, meansOfDeath_t meansOfDeath) {
 	// Update combat timers.
 	// TODO: Add a message to update combat timers.
 	if (client && source->client && entity.oldEnt != source) {
-		client->lastCombatTime = entity.oldEnt->client->lastCombatTime = level.time;
+		client->lastCombatTime = entity.oldEnt->client->lastCombatTime = level.time();
 	}
 
 	if (client) {
@@ -151,7 +151,7 @@ Util::optional<Vec3> direction, int flags, meansOfDeath_t meansOfDeath) {
 		// If boosted poison every attack.
 		// TODO: Add a poison message and a PoisonableComponent.
 		if (source->client && (source->client->ps.stats[STAT_STATE] & SS_BOOSTED) &&
-		    client->pers.team == TEAM_HUMANS && client->poisonImmunityTime < level.time) {
+		    client->pers.team == TEAM_HUMANS && client->poisonImmunityTime < level.time()) {
 			switch (meansOfDeath) {
 				case MOD_POISON:
 				case MOD_LEVEL2_ZAP:
@@ -159,7 +159,7 @@ Util::optional<Vec3> direction, int flags, meansOfDeath_t meansOfDeath) {
 
 				default:
 					client->ps.stats[STAT_STATE] |= SS_POISONED;
-					client->lastPoisonTime   = level.time;
+					client->lastPoisonTime   = level.time();
 					client->lastPoisonClient = source;
 					break;
 			}
@@ -172,14 +172,14 @@ Util::optional<Vec3> direction, int flags, meansOfDeath_t meansOfDeath) {
 	health -= take;
 
 	// Update team overlay info.
-	if (client) client->pers.infoChangeTime = level.time;
+	if (client) client->pers.infoChangeTime = level.time();
 
 	// TODO: Move lastDamageTime to HealthComponent.
-	entity.oldEnt->lastDamageTime = level.time;
+	entity.oldEnt->lastDamageTime = level.time();
 
 	// HACK: gentity_t.nextRegenTime only affects alien clients.
 	// TODO: Catch damage message in a new RegenerationComponent.
-	entity.oldEnt->nextRegenTime = level.time + ALIEN_CLIENT_REGEN_WAIT;
+	entity.oldEnt->nextRegenTime = level.time() + ALIEN_CLIENT_REGEN_WAIT;
 
 	// Handle non-self damage.
 	if (entity.oldEnt != source) {
@@ -192,7 +192,7 @@ Util::optional<Vec3> direction, int flags, meansOfDeath_t meansOfDeath) {
 			// Add to the attacker's account on the target.
 			// TODO: Move damage account array to HealthComponent.
 			entity.oldEnt->credits[source->client->ps.clientNum].value += loss;
-			entity.oldEnt->credits[source->client->ps.clientNum].time = level.time;
+			entity.oldEnt->credits[source->client->ps.clientNum].time = level.time();
 			entity.oldEnt->credits[source->client->ps.clientNum].team = (team_t)source->client->pers.team;
 		}
 	}

@@ -689,8 +689,6 @@ private:
 	int      m_matchTime; // ms since the current match begun
 public:
 
-	int      lastTeamLocationTime; // last time of client team location update
-
 	bool restarted; // waiting for a map_restart to fire
 
 	int      numConnectedClients; // connected clients (players + bots)

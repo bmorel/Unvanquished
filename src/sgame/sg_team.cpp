@@ -520,59 +520,6 @@ int G_PlayerCountForBalance( team_t team )
 
 void CheckTeamStatus()
 {
-	int       i;
-	gentity_t *loc, *ent;
-
-	if ( level.time() - level.lastTeamLocationTime > TEAM_LOCATION_UPDATE_TIME )
-	{
-		level.lastTeamLocationTime = level.time();
-
-		for ( i = 0; i < level.maxclients; i++ )
-		{
-			ent = g_entities + i;
-
-			if ( ent->client->pers.connected != CON_CONNECTED )
-			{
-				continue;
-			}
-
-			if ( ent->inuse && ( ent->client->pers.team == TEAM_HUMANS ||
-			                     ent->client->pers.team == TEAM_ALIENS ) )
-			{
-				loc = GetCloseLocationEntity( ent );
-
-				if ( loc )
-				{
-					if( ent->client->pers.location != loc->s.generic1 )
-					{
-						ent->client->pers.infoChangeTime = level.time();
-						ent->client->pers.location = loc->s.generic1;
-					}
-				}
-				else if ( ent->client->pers.location != 0 )
-				{
-					ent->client->pers.infoChangeTime = level.time();
-					ent->client->pers.location = 0;
-				}
-			}
-		}
-
-		for ( i = 0; i < level.maxclients; i++ )
-		{
-			ent = g_entities + i;
-
-			if ( ent->client->pers.connected != CON_CONNECTED )
-			{
-				continue;
-			}
-
-			if ( ent->inuse )
-			{
-				TeamplayInfoMessage( ent );
-			}
-		}
-	}
-
 	// Warn on imbalanced teams
 	if ( g_teamImbalanceWarnings.integer && !level.intermissiontime &&
 	     ( level.time() - level.lastTeamImbalancedTime >
